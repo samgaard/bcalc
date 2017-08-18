@@ -583,6 +583,24 @@ display:
           admin_label: 'field_source: Taxonomy term'
           required: false
           plugin_id: standard
+        parent:
+          id: parent
+          table: taxonomy_term_hierarchy
+          field: parent
+          relationship: field_source
+          group_type: group
+          admin_label: Parent
+          required: false
+          plugin_id: standard
+        field_category:
+          id: field_category
+          table: taxonomy_term__field_category
+          field: field_category
+          relationship: field_source
+          group_type: group
+          admin_label: 'field_category: Taxonomy term'
+          required: false
+          plugin_id: standard
       arguments: {  }
       display_extenders: {  }
       group_by: true
@@ -610,21 +628,21 @@ display:
         options:
           library: google
           type: pie
-          label_field: field_category
+          label_field: name
           fields:
             table: ''
           data_fields:
             field_category: 0
             field_amount_1: field_amount_1
-            name: name
+            name: 0
           field_colors:
-            field_category: '#2f7ed8'
-            field_amount_1: '#0d233a'
+            field_category: '#ff00d2'
+            field_amount_1: '#8bbc21'
             name: '#8bbc21'
           title: ''
           title_position: out
-          tooltips: ''
-          data_labels: ''
+          tooltips: 'TRUE'
+          data_labels: 'TRUE'
           legend_position: right
           background: ''
           width: ''
@@ -766,7 +784,7 @@ display:
           relationship: field_source
           group_type: group
           admin_label: ''
-          label: ''
+          label: Category
           exclude: false
           alter:
             alter_text: false
@@ -876,7 +894,7 @@ display:
           separator: ', '
           format_plural: 0
           format_plural_string: "1\x03@count"
-          prefix: ''
+          prefix: $
           suffix: ''
           click_sort_column: value
           type: number_decimal
@@ -895,10 +913,10 @@ display:
           id: name
           table: taxonomy_term_field_data
           field: name
-          relationship: field_source
+          relationship: field_category
           group_type: group
           admin_label: ''
-          label: Source
+          label: ''
           exclude: false
           alter:
             alter_text: false

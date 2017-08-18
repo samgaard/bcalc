@@ -1,0 +1,31 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_transaction
+    - node.type.line_item
+    - taxonomy.vocabulary.transaction
+  content:
+    - 'taxonomy_term:transaction:bb2fc947-51ec-4e9a-9656-3225990dc4b0'
+id: node.line_item.field_transaction
+field_name: field_transaction
+entity_type: node
+bundle: line_item
+label: Transaction
+description: ''
+required: true
+translatable: false
+default_value:
+  -
+    target_uuid: bb2fc947-51ec-4e9a-9656-3225990dc4b0
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      transaction: transaction
+    sort:
+      field: _none
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference

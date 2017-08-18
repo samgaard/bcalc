@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Source
+vid: source
+description: 'The origin of a line item. Tagged with a category.'
+hierarchy: 0
+weight: 0

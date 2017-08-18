@@ -1,0 +1,8 @@
+langcode: en
+status: true
+dependencies: {  }
+name: Category
+vid: category
+description: 'The part of life a line item applies to.'
+hierarchy: 1
+weight: 0

@@ -1,0 +1,28 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.taxonomy_term.source.field_category
+    - taxonomy.vocabulary.source
+id: taxonomy_term.source.default
+targetEntityType: taxonomy_term
+bundle: source
+mode: default
+content:
+  field_category:
+    weight: 3
+    settings: {  }
+    third_party_settings: {  }
+    type: options_select
+    region: content
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  description: true
+  path: true
