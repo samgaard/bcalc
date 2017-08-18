@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Contains bcalc.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function bcalc_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the bcalc module.
+    case 'help.page.bcalc':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Family Budget Calculator') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function bcalc_theme() {
+  return [
+    'bcalc' => [
+      'render element' => 'children',
+    ],
+  ];
+}

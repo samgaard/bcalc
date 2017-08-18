@@ -1,0 +1,14 @@
+{
+  "name": "drupal/bcalc",
+  "type": "drupal-module",
+  "description": "Family Budget Calculator",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/bcalc",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/bcalc",
+    "source": "http://cgit.drupalcode.org/bcalc"
+  },
+  "require": { }
+}

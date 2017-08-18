@@ -1,0 +1,9 @@
+
+bcalc.upload_csv:
+  path: '/upload'
+  defaults:
+    _form: '\Drupal\bcalc\Form\uploadcsv'
+    _title: 'uploadcsv'
+  requirements:
+    _access: 'TRUE'
+  
