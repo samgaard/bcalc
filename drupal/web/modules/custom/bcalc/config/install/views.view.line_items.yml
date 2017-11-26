@@ -662,6 +662,7 @@ display:
         filters: false
         filter_groups: false
         fields: false
+        header: false
       row:
         type: fields
         options:
@@ -975,6 +976,20 @@ display:
           entity_type: taxonomy_term
           entity_field: name
           plugin_id: term_name
+      header:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          empty: false
+          tokenize: false
+          content:
+            value: '<a href="/line-items/edit">Edit</a>'
+            format: full_html
+          plugin_id: text
     cache_metadata:
       max-age: -1
       contexts:
