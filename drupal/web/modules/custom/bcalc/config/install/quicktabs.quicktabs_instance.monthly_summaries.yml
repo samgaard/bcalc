@@ -1,0 +1,62 @@
+langcode: en
+status: true
+dependencies: {  }
+id: monthly_summaries
+label: 'Monthly Summaries'
+renderer: quick_tabs
+options:
+  accordion_tabs:
+    jquery_ui:
+      collapsible: 0
+      heightStyle: auto
+  quick_tabs:
+    ajax: '1'
+hide_empty_tabs: 0
+default_tab: '9999'
+configuration_data:
+  -
+    title: July
+    weight: '0'
+    type: view_content
+    content:
+      block_content:
+        options:
+          bid: more_questions
+          block_title: ''
+          display_title: 0
+      node_content:
+        options:
+          nid: ''
+          view_mode: full
+          hide_title: '1'
+      view_content:
+        options:
+          vid: categories
+          display: block_1
+          args: '201707'
+      qtabs_content:
+        options:
+          machine_name: ''
+  -
+    title: ''
+    weight: '0'
+    type: block_content
+    content:
+      block_content:
+        options:
+          bid: more_questions
+          block_title: ''
+          display_title: 0
+      node_content:
+        options:
+          nid: ''
+          view_mode: full
+          hide_title: '1'
+      view_content:
+        options:
+          vid: block_content
+          display: default
+          args: ''
+      qtabs_content:
+        options:
+          machine_name: ''

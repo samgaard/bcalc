@@ -1,0 +1,19 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - quicktabs
+  theme:
+    - bartik
+id: quicktabsmonthlysummaries
+theme: bartik
+region: content
+weight: 0
+provider: null
+plugin: 'quicktabs_block:monthly_summaries'
+settings:
+  id: 'quicktabs_block:monthly_summaries'
+  label: 'Monthly Summaries'
+  provider: quicktabs
+  label_display: visible
+visibility: {  }

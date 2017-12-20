@@ -5,14 +5,17 @@ core: 8.x
 package: Custom
 dependencies:
   - better_exposed_filters
+  - block
   - charts
   - datetime
   - field
   - menu_ui
   - node
   - path
+  - quicktabs
   - taxonomy
   - text
   - user
   - views
   - views_aggregator
+  - views_field_view

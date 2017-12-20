@@ -88,7 +88,7 @@ function import_from_csv($fid) {
     // Create node object.
     $node = Node::create([
       'type' => 'line_item',
-      'title' => $lineitem['Description'] . '-' . time(),
+      'title' => $lineitem['Description'] . ' - ' . time(),
     ]);
 
     //field_transaction
