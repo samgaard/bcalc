@@ -7,3 +7,11 @@ bcalc.upload_csv:
   requirements:
     _access: 'TRUE'
   
+
+bcalc.homepage_build:
+  path: '/home'
+  defaults:
+    _controller: '\Drupal\bcalc\Controller\Homepage::home'
+    _title: 'Home'
+  requirements:
+    _permission: 'access content'

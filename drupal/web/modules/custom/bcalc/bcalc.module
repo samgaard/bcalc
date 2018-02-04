@@ -31,5 +31,8 @@ function bcalc_theme() {
     'bcalc' => [
       'render element' => 'children',
     ],
+    'homepage' => [
+      'variables' => ['tabs' => NULL, 'tabscontent' => NULL],
+    ],
   ];
 }

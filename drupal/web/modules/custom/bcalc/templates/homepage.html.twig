@@ -1,0 +1,8 @@
+{{ tabs }}
+<div class="tab-content">
+    {% for month in tabscontent %}
+        <div id="{{ month.month_name }}" class="tab-pane fade in{% if month.active %} active {% endif %}">
+            {{ month.content }}
+        </div>
+    {% endfor %}
+</div>
