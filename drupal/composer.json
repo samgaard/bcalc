@@ -21,6 +21,7 @@
         "drupal-composer/drupal-scaffold": "^2.2",
         "drupal/admin_toolbar": "^1.19",
         "drupal/better_exposed_filters": "3.x-dev",
+        "drupal/bootstrap": "^3.7",
         "drupal/charts": "3.x-dev",
         "drupal/console": "~1.0",
         "drupal/core": "~8.0",

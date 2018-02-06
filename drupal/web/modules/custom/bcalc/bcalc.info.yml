@@ -9,10 +9,11 @@ dependencies:
   - charts
   - datetime
   - field
+  - help
   - menu_ui
   - node
   - path
-  - quicktabs
+  - system
   - taxonomy
   - text
   - user

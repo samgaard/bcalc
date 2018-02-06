@@ -5,7 +5,6 @@ dependencies:
     - taxonomy.vocabulary.category
   module:
     - better_exposed_filters
-    - datetime
     - node
     - taxonomy
     - user
@@ -199,7 +198,7 @@ display:
           hide_alter_empty: true
           view: line_items
           display: block_1
-          arguments: '{{ raw_fields.tid }}/{{ raw_arguments.field_trans_date_value_year_month }}'
+          arguments: '{{ raw_fields.tid }}'
           plugin_id: view
       filters:
         vid:
@@ -226,47 +225,13 @@ display:
           required: false
           entity_type: taxonomy_term
           plugin_id: entity_reverse
-      arguments:
-        field_trans_date_value_year_month:
-          id: field_trans_date_value_year_month
-          table: node__field_trans_date
-          field: field_trans_date_value_year_month
-          relationship: reverse__node__field_source
-          group_type: group
-          admin_label: ''
-          default_action: ignore
-          exception:
-            value: all
-            title_enable: false
-            title: All
-          title_enable: false
-          title: ''
-          default_argument_type: fixed
-          default_argument_options:
-            argument: ''
-          default_argument_skip_url: false
-          summary_options:
-            base_path: ''
-            count: true
-            items_per_page: 25
-            override: false
-          summary:
-            sort_order: asc
-            number_of_records: 0
-            format: default_summary
-          specify_validation: false
-          validate:
-            type: none
-            fail: 'not found'
-          validate_options: {  }
-          plugin_id: datetime_year_month
+      arguments: {  }
       display_extenders: {  }
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
-        - url
         - user.permissions
       tags: {  }
   block_1:
@@ -281,6 +246,5 @@ display:
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
-        - url
         - user.permissions
       tags: {  }

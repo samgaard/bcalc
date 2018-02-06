@@ -2,7 +2,9 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.node.line_item.body
     - field.field.node.line_item.field_amount
+    - field.field.node.line_item.field_category
     - field.field.node.line_item.field_post_date
     - field.field.node.line_item.field_source
     - field.field.node.line_item.field_trans_date
@@ -28,6 +30,15 @@ content:
       placeholder: ''
     third_party_settings: {  }
     type: number
+    region: content
+  field_category:
+    weight: 37
+    settings:
+      match_operator: CONTAINS
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+    type: entity_reference_autocomplete
     region: content
   field_post_date:
     weight: 35
@@ -96,4 +107,5 @@ content:
       placeholder: ''
     third_party_settings: {  }
     region: content
-hidden: {  }
+hidden:
+  body: true
