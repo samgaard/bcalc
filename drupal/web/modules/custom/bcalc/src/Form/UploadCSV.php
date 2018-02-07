@@ -4,13 +4,13 @@ namespace Drupal\bcalc\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use \Drupal\node\Entity\Node;
-use \Drupal\taxonomy\Entity\Term;
+use Drupal\node\Entity\Node;
+use Drupal\taxonomy\Entity\Term;
 
 /**
  * Class UploadCSV.
  */
-class uploadcsv extends FormBase {
+class UploadCSV extends FormBase {
 
 
   /**
