@@ -26,7 +26,10 @@ class Homepage extends ControllerBase {
     return [
       '#theme' => 'homepage',
       '#tabs' => $tabs_content['tabs'],
-      '#tabscontent' => $tabs_content['content']
+      '#tabscontent' => $tabs_content['content'],
+      '#cache' => [
+        'max-age' => 0,
+      ]
     ];
   }
 
@@ -57,7 +60,8 @@ function buildHomepageTabs() {
       $tabs_content[] = [
         'active' => $active,
         'month_name' => strtolower($monthName),
-        'content' => $viewRendered['#markup']
+        'content' => $viewRendered['#markup'],
+        'edit_arg' => '2017' . $dateObj->format('m')
       ];
       
       $url = Url::fromUserInput('#' . strtolower($monthName), ['attributes' => ['data-toggle' => 'tab']]);

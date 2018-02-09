@@ -33,12 +33,9 @@ content:
     region: content
   field_category:
     weight: 37
-    settings:
-      match_operator: CONTAINS
-      size: 60
-      placeholder: ''
+    settings: {  }
     third_party_settings: {  }
-    type: entity_reference_autocomplete
+    type: options_select
     region: content
   field_post_date:
     weight: 35
@@ -63,12 +60,9 @@ content:
     region: content
   field_transaction:
     weight: 36
-    settings:
-      match_operator: CONTAINS
-      size: 60
-      placeholder: ''
+    settings: {  }
     third_party_settings: {  }
-    type: entity_reference_autocomplete
+    type: options_select
     region: content
   path:
     type: path
@@ -83,6 +77,13 @@ content:
     weight: 15
     third_party_settings: {  }
     region: content
+  status:
+    type: boolean_checkbox
+    settings:
+      display_label: true
+    weight: 120
+    region: content
+    third_party_settings: {  }
   sticky:
     type: boolean_checkbox
     settings:

@@ -5,8 +5,6 @@ dependencies:
     - field.storage.node.field_transaction
     - node.type.line_item
     - taxonomy.vocabulary.transaction
-  content:
-    - 'taxonomy_term:transaction:bb2fc947-51ec-4e9a-9656-3225990dc4b0'
 id: node.line_item.field_transaction
 field_name: field_transaction
 entity_type: node
