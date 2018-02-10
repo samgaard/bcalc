@@ -57,11 +57,24 @@ function buildHomepageTabs() {
       $dateObj = \DateTime::createFromFormat('!m', $i);
       $monthName = $dateObj->format('F');
 
+      //CHART
+      $chart_view = Views::getView('line_items');
+      $chart_view->setDisplay('block_2');
+      $chart_view->setArguments(array('2017' . $month));
+      $chart_viewRendered = $chart_view->render();
+      if($chart_viewRendered['#rows']) {
+        \Drupal::service('renderer')->render($chart_viewRendered);
+        $chart = $chart_viewRendered['#markup'];
+      } else {
+        $chart = '';
+      }
+
       $tabs_content[] = [
         'active' => $active,
         'month_name' => strtolower($monthName),
         'content' => $viewRendered['#markup'],
-        'edit_arg' => '2017' . $dateObj->format('m')
+        'edit_arg' => '2017' . $dateObj->format('m'),
+        'chart' => $chart
       ];
       
       $url = Url::fromUserInput('#' . strtolower($monthName), ['attributes' => ['data-toggle' => 'tab']]);
