@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Implements hook_help().
@@ -35,4 +36,15 @@ function bcalc_theme() {
       'variables' => ['tabs' => NULL, 'tabscontent' => NULL],
     ],
   ];
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function bcalc_form_alter(&$form, FormStateInterface $form_state) {
+  if($form['#form_id'] == 'taxonomy_term_category_form') {
+    #$form['relations']['parent']['#multiple'] = false;
+    $form['relations']['#open'] = true;
+    $form['relations']['weight']['#access'] = false;
+  }
 }
