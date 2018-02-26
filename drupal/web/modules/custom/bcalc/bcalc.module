@@ -44,6 +44,7 @@ function bcalc_theme() {
 function bcalc_form_alter(&$form, FormStateInterface $form_state) {
   if($form['#form_id'] == 'taxonomy_term_category_form') {
     #$form['relations']['parent']['#multiple'] = false;
+    $form['relations']['parent']['#attributes'] = ['style' => 'height: 400px;'];
     $form['relations']['#open'] = true;
     $form['relations']['weight']['#access'] = false;
   }
