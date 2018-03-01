@@ -17,10 +17,9 @@ bcalc.homepage_build:
     _permission: 'access content'
 
 bcalc.line_items:
-  path: '/bcalc/form/line_items'
+  path: '/bcalc/line-items/edit/{year_month}'
   defaults:
     _form: '\Drupal\bcalc\Form\LineItems'
-    _title: 'LineItems'
   requirements:
     _access: 'TRUE'
   
