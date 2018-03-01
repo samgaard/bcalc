@@ -49,7 +49,7 @@ function buildHomepageTabs() {
 
     $view = Views::getView('line_items');
     $view->setDisplay('block_1');
-    $view->setArguments(array('2017' . $month));
+    $view->setArguments(array('2018' . $month));
     $viewRendered = $view->render();
     if($viewRendered['#rows']) {
       \Drupal::service('renderer')->render($viewRendered);
@@ -60,7 +60,7 @@ function buildHomepageTabs() {
       //CHART
       $chart_view = Views::getView('line_items');
       $chart_view->setDisplay('block_2');
-      $chart_view->setArguments(array('2017' . $month));
+      $chart_view->setArguments(array('2018' . $month));
       $chart_viewRendered = $chart_view->render();
       if($chart_viewRendered['#rows']) {
         \Drupal::service('renderer')->render($chart_viewRendered);
@@ -73,7 +73,7 @@ function buildHomepageTabs() {
         'active' => $active,
         'month_name' => strtolower($monthName),
         'content' => $viewRendered['#markup'],
-        'edit_arg' => '2017' . $dateObj->format('m'),
+        'edit_arg' => '2018-' . $dateObj->format('m'),
         'chart' => $chart
       ];
       
