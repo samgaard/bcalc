@@ -23,7 +23,22 @@ class LineItems extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $year_month = '2017-07') {
+  public function buildForm(array $form, FormStateInterface $form_state, $year_month = null) {
+
+    if($year_month == null) {
+      return $form;
+    }
+
+    $datepieces = explode('-', $year_month);
+    $year = $datepieces[0];
+    $month = $datepieces[1];
+    $beginning_of_month = $year_month . '-01';
+    $end_of_month = $year_month . '-' . cal_days_in_month(CAL_GREGORIAN, $month, $year);
+
+    $dateObj = \DateTime::createFromFormat('!m', $month);
+    $monthName = $dateObj->format('F');
+
+    $form['#title'] = "{$monthName} {$year}";
 
     $header = [
       'Date',
@@ -46,12 +61,6 @@ class LineItems extends FormBase {
         $options[$parent->name][$child->tid] = $child->name;
       }
     }
-
-    $datepieces = explode('-', $year_month);
-    $year = $datepieces[0];
-    $month = $datepieces[1];
-    $beginning_of_month = $year_month . '-01';
-    $end_of_month = $year_month . '-' . cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
     $nids = \Drupal::entityQuery('node')
       ->condition('type','line_item')
