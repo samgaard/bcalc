@@ -130,6 +130,14 @@ function import_from_csv($fid) {
     }
     $node->set('field_source', ['target_id' => $desc_tid[0]]);
 
+    //IF THE SOURCE HAS A CATEGORY, USE IT FOR LINE ITEM NODE
+    $source_tid = $desc_tid[0];
+    $source_term = Term::load($source_tid);
+    $source_category_tid = $source_term->get('field_category')->target_id;
+    if ($source_category_tid != '') {
+      //IF THE SOURCE SOURCE HAS A CATEGORY, USE IT
+      $node->set('field_category', ['target_id' => $source_category_tid]);
+    }
 
     $node->setOwnerId(\Drupal::currentUser()->id());
 
