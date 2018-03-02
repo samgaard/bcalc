@@ -143,6 +143,7 @@ function import_from_csv($fid) {
 
     $node->save();
 
+    drupal_set_message('Created line item for ' . $node->getTitle());
 
   }
 
