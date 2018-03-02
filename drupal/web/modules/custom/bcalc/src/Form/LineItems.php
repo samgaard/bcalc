@@ -4,6 +4,8 @@ namespace Drupal\bcalc\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
 
@@ -92,6 +94,10 @@ class LineItems extends FormBase {
         '#options' => $options,
         '#default_value' => $cat_id,
       ];
+      $form['line_items_table'][$node_id]['edit'] = [
+        '#type' => 'markup',
+        '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', ['node' => $node_id], ['query' => ['destination' => '/line-items/edit/' . $year_month]])->toString(),
+      ];
 
     }
 
@@ -116,11 +122,25 @@ class LineItems extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $form_values = $form_state->getValues();
-
     foreach ($form_values['line_items_table'] as $key => $value) {
      if($value['category']) {
+
+       //LOAD NODE
        $node = Node::load($key);
+
+       //SET CATEGORY
        $node->set('field_category', ['target_id' => $value['category']]);
+
+       //CHECK THAT SOURCE USES SAME CATEGORY FOR IMPORT CHECK
+       $source_tid = $node->get('field_source')->target_id;
+       $source_term = Term::load($source_tid);
+       $source_category_tid = $source_term->get('field_category')->target_id;
+       if($source_category_tid != $value['category']) {
+         //IF THE SOURCE CATEGORY IS DIFFERENT, CHANGE IT
+         $source_term->set('field_category',  $value['category']);
+         $source_term->save();
+       }
+
        $node->save();
      }
     }
