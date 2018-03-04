@@ -64,9 +64,17 @@ class LineItems extends FormBase {
       }
     }
 
+
+    $return = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Return']);
+    $payment = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Payment']);
+
+    $return_term = array_shift($return);
+    $payment_term = array_shift($payment);
+
     $nids = \Drupal::entityQuery('node')
       ->condition('type','line_item')
       ->condition('field_trans_date', [$beginning_of_month, $end_of_month], 'BETWEEN')
+      ->condition('field_transaction', [$return_term->id(),$payment_term->id()], 'NOT IN')
       ->condition('uid', \Drupal::currentUser()->id())
       ->execute();
     $nodes = Node::loadMultiple($nids);
