@@ -69,6 +69,39 @@ class UploadCSV extends FormBase {
 
   }
 
+  private function valid_headers() {
+    return [
+      'chase_cc_statement' => [
+        'Type',
+        'Trans Date',
+        'Post Date',
+        'Description',
+        'Amount'
+      ],
+      'chase_checking' => [
+        'Details',
+        'Posting Date',
+        'Description',
+        'Amount',
+        'Type',
+        'Balance',
+        'Check or Slip #',
+      ]
+    ];
+  }
+
+  private function validate_header($header = []) {
+    //CONFIRM DOCUMENT IS IN ONE OF THE APPROVED FORMATS
+    foreach($this->valid_headers() as $header_type => $valid_header) {
+      if(!array_diff($valid_header, $header)) {
+        //RETURN HEADER TYPE. USEFUL FOR DETERMINING HOW TO IMPORT DATA.
+        return $header_type;
+      }
+    }
+    //DEFAULT RETURN FALSE
+    return false;
+  }
+
   private function import_from_csv($fid) {
 
     $file = \Drupal::entityTypeManager()->getStorage('file')->load($fid);
