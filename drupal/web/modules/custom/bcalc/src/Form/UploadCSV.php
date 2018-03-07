@@ -50,9 +50,24 @@ class UploadCSV extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    $fid = $form_state->getValue('csv_file');
 
-    //check it's one of the headers that match
+    $file = \Drupal::entityTypeManager()->getStorage('file')->load($fid[0]);
 
+    $header = NULL;
+    if (($handle = fopen($file->getFileUri(), "r")) !== FALSE) {
+      while (($row = fgetcsv($handle, 100000, ",")) !== FALSE) {
+        if ($header === NULL) {
+          $header = $row;
+          break;
+        }
+      }
+    }
+
+    //VALIDATE FILE FORMAT
+    if (!$this->validate_header($header)) {
+      $form_state->setError($form['csv_file'], 'Your file needs to match an approved format.');
+    }
     parent::validateForm($form, $form_state);
   }
 
