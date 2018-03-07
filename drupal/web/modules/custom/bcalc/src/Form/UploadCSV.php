@@ -133,77 +133,105 @@ class UploadCSV extends FormBase {
       }
     }
 
+    //GET FILE FORMAT
+    if ($file_format = $this->validate_header($header)) {
 
+      //LOOP THROUGH ALL ITEMS
+      foreach ($lineitems AS $lineitem) {
 
+        //INTERPRET DATA BASED ON FILE FORMAT
+        switch ($file_format) {
+          case 'chase_cc_statement':
+            $transaction_description = $lineitem['Description'];
+            $transaction_type = $lineitem['Type'];
+            $transaction_date = $lineitem['Trans Date'];
+            $post_date = $lineitem['Post Date'];
+            $transaction_amount = $lineitem['Amount'];
+            break;
+          case 'chase_checking':
+            $transaction_type = '';
+            switch($lineitem['Details']) {
+              case 'DEBIT':
+                $transaction_type = 'Sale';
+                break;
+              case 'CREDIT':
+              case 'DSLIP':
+                $transaction_type = 'Payment';
+                break;
+            }
+            $transaction_description = $lineitem['Description'];
+            $transaction_date = $lineitem['Posting Date'];
+            $post_date = $lineitem['Posting Date'];
+            $transaction_amount = $lineitem['Amount'];
 
+            if(strpos($transaction_description, 'Payment to Chase') !== false) {
+              continue 2;
+            }
 
-    //dont import 'Payment to Chase card'
+            break;
+        }
 
-
-
-
-    foreach ($lineitems AS $lineitem) {
-      // Create node object.
-      $node = Node::create([
-        'type' => 'line_item',
-        'title' => $lineitem['Description'] . ' - ' . time(),
-      ]);
-
-      //TRANSLATE CHECKING IMPORT HEADERS
-
-      //field_transaction
-      $txn_term_name = $lineitem['Type'];
-      $term = \Drupal::entityTypeManager()
-        ->getStorage('taxonomy_term')
-        ->loadByProperties(['name' => $txn_term_name]);
-      $txn_tid = array_keys($term);
-
-      if (isset($txn_tid[0])) {
-        $node->set('field_transaction', ['target_id' => $txn_tid[0]]);
-      }
-
-      //dates
-      $node->set('field_trans_date', date('Y-m-d', strtotime($lineitem['Trans Date'])));
-      $node->set('field_post_date', date('Y-m-d', strtotime($lineitem['Post Date'])));
-
-      //amount
-      $node->set('field_amount', abs($lineitem['Amount']));
-
-      //check if exists
-      $desc_term_name = $lineitem['Description'];
-      $term = \Drupal::entityTypeManager()
-        ->getStorage('taxonomy_term')
-        ->loadByProperties(['name' => $desc_term_name]);
-      $desc_tid = array_keys($term);
-      if (!isset($desc_tid[0])) {
-        //create new
-        $new_term = Term::create([
-          'name' => $desc_term_name,
-          'vid' => 'source',
+        // Create node object.
+        $node = Node::create([
+          'type' => 'line_item',
+          'title' => $transaction_description . ' - ' . time(),
         ]);
-        $new_term->save();
 
+        //field_transaction
+        $txn_term_name = $transaction_type;
+        $term = \Drupal::entityTypeManager()
+          ->getStorage('taxonomy_term')
+          ->loadByProperties(['name' => $txn_term_name]);
+        $txn_tid = array_keys($term);
+
+        if (isset($txn_tid[0])) {
+          $node->set('field_transaction', ['target_id' => $txn_tid[0]]);
+        }
+
+        //dates
+        $node->set('field_trans_date', date('Y-m-d', strtotime($transaction_date)));
+        $node->set('field_post_date', date('Y-m-d', strtotime($post_date)));
+
+        //amount
+        $node->set('field_amount', abs($transaction_amount));
+
+        //check if exists
+        $desc_term_name = $transaction_description;
         $term = \Drupal::entityTypeManager()
           ->getStorage('taxonomy_term')
           ->loadByProperties(['name' => $desc_term_name]);
         $desc_tid = array_keys($term);
+        if (!isset($desc_tid[0])) {
+          //create new
+          $new_term = Term::create([
+            'name' => $desc_term_name,
+            'vid' => 'source',
+          ]);
+          $new_term->save();
+
+          $term = \Drupal::entityTypeManager()
+            ->getStorage('taxonomy_term')
+            ->loadByProperties(['name' => $desc_term_name]);
+          $desc_tid = array_keys($term);
+        }
+        $node->set('field_source', ['target_id' => $desc_tid[0]]);
+
+        //IF THE SOURCE HAS A CATEGORY, USE IT FOR LINE ITEM NODE
+        $source_tid = $desc_tid[0];
+        $source_term = Term::load($source_tid);
+        $source_category_tid = $source_term->get('field_category')->target_id;
+        if ($source_category_tid != '') {
+          //IF THE SOURCE SOURCE HAS A CATEGORY, USE IT
+          $node->set('field_category', ['target_id' => $source_category_tid]);
+        }
+
+        $node->setOwnerId(\Drupal::currentUser()->id());
+
+        $node->save();
+
+        drupal_set_message('Created line item for ' . $node->getTitle());
+
       }
-      $node->set('field_source', ['target_id' => $desc_tid[0]]);
-
-      //IF THE SOURCE HAS A CATEGORY, USE IT FOR LINE ITEM NODE
-      $source_tid = $desc_tid[0];
-      $source_term = Term::load($source_tid);
-      $source_category_tid = $source_term->get('field_category')->target_id;
-      if ($source_category_tid != '') {
-        //IF THE SOURCE SOURCE HAS A CATEGORY, USE IT
-        $node->set('field_category', ['target_id' => $source_category_tid]);
-      }
-
-      $node->setOwnerId(\Drupal::currentUser()->id());
-
-      $node->save();
-
-      drupal_set_message('Created line item for ' . $node->getTitle());
 
     }
 
