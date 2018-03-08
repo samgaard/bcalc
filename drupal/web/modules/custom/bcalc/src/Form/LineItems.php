@@ -44,6 +44,7 @@ class LineItems extends FormBase {
 
     $header = [
       'Date',
+      'Type',
       'Source',
       'Amount',
       'Category'
@@ -64,18 +65,17 @@ class LineItems extends FormBase {
       }
     }
 
-
-    $return = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Return']);
-    $payment = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Payment']);
-
-    $return_term = array_shift($return);
-    $payment_term = array_shift($payment);
+    //$return = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Return']);
+    //$payment = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Payment']);
+    //$return_term = array_shift($return);
+    //$payment_term = array_shift($payment);
 
     $nids = \Drupal::entityQuery('node')
       ->condition('type','line_item')
       ->condition('field_trans_date', [$beginning_of_month, $end_of_month], 'BETWEEN')
-      ->condition('field_transaction', [$return_term->id(),$payment_term->id()], 'NOT IN')
+      //->condition('field_transaction', [$return_term->id(),$payment_term->id()], 'NOT IN')
       ->condition('uid', \Drupal::currentUser()->id())
+      ->sort('field_transaction')
       ->execute();
     $nodes = Node::loadMultiple($nids);
 
@@ -84,10 +84,15 @@ class LineItems extends FormBase {
       $node_id = $node->id();
       $cat_id = $node->get('field_category')->target_id;
       $src_id = $node->get('field_source')->target_id;
+      $trns_id = $node->get('field_transaction')->target_id;
 
       $form['line_items_table'][$node_id]['date'] = [
         '#type' => 'markup',
         '#markup' => $node->get('field_trans_date')->value
+      ];
+      $form['line_items_table'][$node_id]['type'] = [
+        '#type' => 'markup',
+        '#markup' => ($trns_id ? Term::load($trns_id)->getName() : '')
       ];
       $form['line_items_table'][$node_id]['source'] = [
         '#type' => 'markup',
