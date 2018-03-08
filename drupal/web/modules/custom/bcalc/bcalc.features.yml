@@ -1,1 +1,12 @@
+excluded:
+  - block.block.bcalc_subtheme_account_menu
+  - block.block.bcalc_subtheme_branding
+  - block.block.bcalc_subtheme_breadcrumbs
+  - block.block.bcalc_subtheme_content
+  - block.block.bcalc_subtheme_help
+  - block.block.bcalc_subtheme_local_actions
+  - block.block.bcalc_subtheme_local_tasks
+  - block.block.bcalc_subtheme_main_menu
+  - block.block.bcalc_subtheme_messages
+  - block.block.bcalc_subtheme_tools
 required: true
