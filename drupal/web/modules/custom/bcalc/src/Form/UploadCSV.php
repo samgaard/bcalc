@@ -145,7 +145,6 @@ class UploadCSV extends FormBase {
             $transaction_description = $lineitem['Description'];
             $transaction_type = $lineitem['Type'];
             $transaction_date = $lineitem['Trans Date'];
-            $post_date = $lineitem['Post Date'];
             $transaction_amount = $lineitem['Amount'];
             break;
           case 'chase_checking':
@@ -161,7 +160,6 @@ class UploadCSV extends FormBase {
             }
             $transaction_description = $lineitem['Description'];
             $transaction_date = $lineitem['Posting Date'];
-            $post_date = $lineitem['Posting Date'];
             $transaction_amount = $lineitem['Amount'];
 
             if(strpos($transaction_description, 'Payment to Chase') !== false) {
@@ -190,39 +188,41 @@ class UploadCSV extends FormBase {
 
         //dates
         $node->set('field_trans_date', date('Y-m-d', strtotime($transaction_date)));
-        $node->set('field_post_date', date('Y-m-d', strtotime($post_date)));
 
         //amount
         $node->set('field_amount', abs($transaction_amount));
 
-        //check if exists
-        $desc_term_name = $transaction_description;
-        $term = \Drupal::entityTypeManager()
-          ->getStorage('taxonomy_term')
-          ->loadByProperties(['name' => $desc_term_name]);
-        $desc_tid = array_keys($term);
-        if (!isset($desc_tid[0])) {
-          //create new
-          $new_term = Term::create([
-            'name' => $desc_term_name,
-            'vid' => 'source',
-          ]);
-          $new_term->save();
-
+        if($file_format != 'chase_checking') {
+          //check if exists
+          $desc_term_name = $transaction_description;
           $term = \Drupal::entityTypeManager()
             ->getStorage('taxonomy_term')
             ->loadByProperties(['name' => $desc_term_name]);
           $desc_tid = array_keys($term);
-        }
-        $node->set('field_source', ['target_id' => $desc_tid[0]]);
+          if (!isset($desc_tid[0])) {
+            //create new
+            $new_term = Term::create([
+              'name' => $desc_term_name,
+              'vid' => 'source',
+            ]);
+            $new_term->save();
 
-        //IF THE SOURCE HAS A CATEGORY, USE IT FOR LINE ITEM NODE
-        $source_tid = $desc_tid[0];
-        $source_term = Term::load($source_tid);
-        $source_category_tid = $source_term->get('field_category')->target_id;
-        if ($source_category_tid != '') {
-          //IF THE SOURCE SOURCE HAS A CATEGORY, USE IT
-          $node->set('field_category', ['target_id' => $source_category_tid]);
+            $term = \Drupal::entityTypeManager()
+              ->getStorage('taxonomy_term')
+              ->loadByProperties(['name' => $desc_term_name]);
+            $desc_tid = array_keys($term);
+          }
+          $node->set('field_source', ['target_id' => $desc_tid[0]]);
+
+          //IF THE SOURCE HAS A CATEGORY, USE IT FOR LINE ITEM NODE
+          $source_tid = $desc_tid[0];
+          $source_term = Term::load($source_tid);
+          $source_category_tid = $source_term->get('field_category')->target_id;
+          if ($source_category_tid != '') {
+            //IF THE SOURCE SOURCE HAS A CATEGORY, USE IT
+            $node->set('field_category', ['target_id' => $source_category_tid]);
+          }
+
         }
 
         $node->setOwnerId(\Drupal::currentUser()->id());
