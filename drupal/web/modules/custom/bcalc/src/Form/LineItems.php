@@ -86,6 +86,8 @@ class LineItems extends FormBase {
       $src_id = $node->get('field_source')->target_id;
       $trns_id = $node->get('field_transaction')->target_id;
 
+      $node_title = explode('-', $node->get('title')->getString());
+
       $form['line_items_table'][$node_id]['date'] = [
         '#type' => 'markup',
         '#markup' => $node->get('field_trans_date')->value
@@ -96,7 +98,7 @@ class LineItems extends FormBase {
       ];
       $form['line_items_table'][$node_id]['source'] = [
         '#type' => 'markup',
-        '#markup' => ($src_id ? Term::load($src_id)->getName() : '')
+        '#markup' => ($src_id ? Term::load($src_id)->getName() : trim($node_title[0]))
       ];
       $form['line_items_table'][$node_id]['amount'] = [
         '#type' => 'markup',
