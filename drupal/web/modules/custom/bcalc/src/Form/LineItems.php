@@ -27,7 +27,7 @@ class LineItems extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $year_month = null) {
 
-    if($year_month == null) {
+    if ($year_month == NULL) {
       return $form;
     }
 
@@ -59,7 +59,7 @@ class LineItems extends FormBase {
     $terms = $tt->load('category');
 
     $options = [''];
-    foreach($terms as $parent) {
+    foreach ($terms as $parent) {
       foreach ($parent->children as $child) {
         $options[$parent->name][$child->tid] = $child->name;
       }
@@ -71,22 +71,23 @@ class LineItems extends FormBase {
     //$payment_term = array_shift($payment);
 
     $nids = \Drupal::entityQuery('node')
-      ->condition('type','line_item')
-      ->condition('field_trans_date', [$beginning_of_month, $end_of_month], 'BETWEEN')
+      ->condition('type', 'line_item')
+      ->condition('field_trans_date', [
+        $beginning_of_month,
+        $end_of_month
+      ], 'BETWEEN')
       //->condition('field_transaction', [$return_term->id(),$payment_term->id()], 'NOT IN')
       ->condition('uid', \Drupal::currentUser()->id())
       ->sort('field_transaction')
       ->execute();
     $nodes = Node::loadMultiple($nids);
 
-    foreach($nodes as $node) {
+    foreach ($nodes as $node) {
 
       $node_id = $node->id();
       $cat_id = $node->get('field_category')->target_id;
       $src_id = $node->get('field_source')->target_id;
       $trns_id = $node->get('field_transaction')->target_id;
-
-      $node_title = explode('-', $node->get('title')->getString());
 
       $form['line_items_table'][$node_id]['date'] = [
         '#type' => 'markup',
@@ -98,7 +99,8 @@ class LineItems extends FormBase {
       ];
       $form['line_items_table'][$node_id]['source'] = [
         '#type' => 'markup',
-        '#markup' => ($src_id ? Term::load($src_id)->getName() : trim($node_title[0]))
+        '#markup' => ($src_id ? Term::load($src_id)
+          ->getName() : $node->get('title')->getString())
       ];
       $form['line_items_table'][$node_id]['amount'] = [
         '#type' => 'markup',
@@ -111,7 +113,8 @@ class LineItems extends FormBase {
       ];
       $form['line_items_table'][$node_id]['edit'] = [
         '#type' => 'markup',
-        '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', ['node' => $node_id], ['query' => ['destination' => '/line-items/edit/' . $year_month]])->toString(),
+        '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', ['node' => $node_id], ['query' => ['destination' => '/bcalc/line-items/edit/' . $year_month]])
+          ->toString(),
       ];
 
     }
