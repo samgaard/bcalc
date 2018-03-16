@@ -115,13 +115,15 @@ GROUP BY parent_name";
     $numbers = [];
 
     foreach ($results as $key => $result) {
-      $categories[] = $result->parent_name;
-      $numbers[] = ['name' => $result->parent_name, 'y' => (int) number_format($result->amount, 0)];
+      if($result->amount && $result->parent_name != 'Income') {
+        $categories[] = $result->parent_name;
+        $numbers[] = ['name' => $result->parent_name, 'y' => (int) $result->amount];
+      }
     }
     $seriesData[] = ["data" => $numbers];
 
     $options = [];
-    $options['title'] = t('Chart title');
+    $options['title'] = '';
     $options['type'] = 'pie';
     $options['yaxis_title'] = t('Y-Axis');
     $options['yaxis_min'] = '';
