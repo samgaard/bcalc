@@ -32,7 +32,7 @@ sites/*/private
 /drupal/web/misc
 /drupal/web/profiles
 /drupal/web/scripts
-/drupal/web/themes
+/drupal/web/themes/contrib
 /drupal/web/vendor
 /vendor
 /drupal/web/robots.txt
@@ -65,3 +65,14 @@ sites/*/private
 /drupal/.gitignore
 .DS_Store
 .idea
+/drupal/web/themes/custom/bcalc_subtheme/bootstrap
+/drupal/web/themes/custom/bcalc_subtheme/config
+/drupal/web/themes/custom/bcalc_subtheme/css
+/drupal/web/themes/custom/bcalc_subtheme/favicon.ico
+/drupal/web/themes/custom/bcalc_subtheme/images
+/drupal/web/themes/custom/bcalc_subtheme/js/bcalc.js
+/drupal/web/themes/custom/bcalc_subtheme/less
+/drupal/web/themes/custom/bcalc_subtheme/logo.svg
+/drupal/web/themes/custom/bcalc_subtheme/README.md
+/drupal/web/themes/custom/bcalc_subtheme/screenshot.png
+/drupal/web/themes/custom/bcalc_subtheme/templates/README.md
