@@ -25,7 +25,7 @@ class LineItems extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $year_month = null) {
+  public function buildForm(array $form, FormStateInterface $form_state, $year_month = NULL) {
 
     if ($year_month == NULL) {
       return $form;
@@ -78,7 +78,7 @@ class LineItems extends FormBase {
       ], 'BETWEEN')
       //->condition('field_transaction', [$return_term->id(),$payment_term->id()], 'NOT IN')
       ->condition('uid', \Drupal::currentUser()->id())
-      ->sort('field_transaction')
+      ->sort('field_trans_date')
       ->execute();
     $nodes = Node::loadMultiple($nids);
 
@@ -149,7 +149,7 @@ class LineItems extends FormBase {
       $node->set('field_category', ['target_id' => $value['category']]);
 
       //CHECK THAT SOURCE USES SAME CATEGORY FOR IMPORT CHECK
-      if($source_tid = $node->get('field_source')->target_id) {
+      if ($source_tid = $node->get('field_source')->target_id) {
         $source_term = Term::load($source_tid);
         if ($source_category_tid = $source_term->get('field_category')->target_id) {
           if ($source_category_tid != $value['category']) {
