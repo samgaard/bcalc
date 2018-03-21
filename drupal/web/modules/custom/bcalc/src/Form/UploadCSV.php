@@ -192,38 +192,36 @@ class UploadCSV extends FormBase {
         //amount
         $node->set('field_amount', abs($transaction_amount));
 
-        if($file_format != 'chase_checking') {
-          //check if exists
-          $desc_term_name = $transaction_description;
+        //check if exists
+        $desc_term_name = $transaction_description;
+        $term = \Drupal::entityTypeManager()
+          ->getStorage('taxonomy_term')
+          ->loadByProperties(['name' => $desc_term_name]);
+        $desc_tid = array_keys($term);
+        if (!isset($desc_tid[0])) {
+          //create new
+          $new_term = Term::create([
+            'name' => $desc_term_name,
+            'vid' => 'source',
+          ]);
+          $new_term->save();
+
           $term = \Drupal::entityTypeManager()
             ->getStorage('taxonomy_term')
             ->loadByProperties(['name' => $desc_term_name]);
           $desc_tid = array_keys($term);
-          if (!isset($desc_tid[0])) {
-            //create new
-            $new_term = Term::create([
-              'name' => $desc_term_name,
-              'vid' => 'source',
-            ]);
-            $new_term->save();
-
-            $term = \Drupal::entityTypeManager()
-              ->getStorage('taxonomy_term')
-              ->loadByProperties(['name' => $desc_term_name]);
-            $desc_tid = array_keys($term);
-          }
-          $node->set('field_source', ['target_id' => $desc_tid[0]]);
-
-          //IF THE SOURCE HAS A CATEGORY, USE IT FOR LINE ITEM NODE
-          $source_tid = $desc_tid[0];
-          $source_term = Term::load($source_tid);
-          $source_category_tid = $source_term->get('field_category')->target_id;
-          if ($source_category_tid != '') {
-            //IF THE SOURCE SOURCE HAS A CATEGORY, USE IT
-            $node->set('field_category', ['target_id' => $source_category_tid]);
-          }
-
         }
+        $node->set('field_source', ['target_id' => $desc_tid[0]]);
+
+        //IF THE SOURCE HAS A CATEGORY, USE IT FOR LINE ITEM NODE
+        $source_tid = $desc_tid[0];
+        $source_term = Term::load($source_tid);
+        $source_category_tid = $source_term->get('field_category')->target_id;
+        if ($source_category_tid != '') {
+          //IF THE SOURCE SOURCE HAS A CATEGORY, USE IT
+          $node->set('field_category', ['target_id' => $source_category_tid]);
+        }
+
 
         $node->setOwnerId(\Drupal::currentUser()->id());
 
