@@ -115,9 +115,14 @@ GROUP BY parent_name";
     $numbers = [];
 
     foreach ($results as $key => $result) {
-      if($result->amount && $result->parent_name != 'Income') {
-        $categories[] = $result->parent_name;
-        $numbers[] = ['name' => $result->parent_name, 'y' => (int) $result->amount];
+      if($result->amount) {
+        if($result->parent_name != 'Income') {
+          $categories[] = $result->parent_name;
+          $numbers[] = [
+            'name' => $result->parent_name,
+            'y' => (int) $result->amount
+          ];
+        }
       }
     }
     $seriesData[] = ["data" => $numbers];
