@@ -54,7 +54,7 @@ class Homepage extends ControllerBase {
         $monthName = $dateObj->format('F');
 
         //CHART
-        $chart = $this->buildSpendingChart('2018' . $month);
+        $chart = $this->buildChart('2018' . $month);
 
         $tabs_content[] = [
           'active' => $active,
@@ -90,7 +90,7 @@ class Homepage extends ControllerBase {
     return ['tabs' => $list, 'content' => $tabs_content];
   }
 
-  private function buildSpendingChart($year_month) {
+  private function buildChart($year_month, $income = false) {
     $connection = Database::getConnection();
     $query = "SELECT parent_term.name AS parent_name, SUM(amount.field_amount_value) AS amount, MIN(nfd.nid) AS nid, MIN(catdata.tid) AS cat_tid, MIN(parent_term.tid) AS parent_tid
 FROM 
