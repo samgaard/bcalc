@@ -151,11 +151,11 @@ class UploadCSV extends FormBase {
             $transaction_type = '';
             switch($lineitem['Details']) {
               case 'DEBIT':
-                $transaction_type = 'Sale';
+                $transaction_type = 'Money Out';
                 break;
               case 'CREDIT':
               case 'DSLIP':
-                $transaction_type = 'Payment';
+                $transaction_type = 'Money In';
                 break;
             }
             $transaction_description = $lineitem['Description'];
