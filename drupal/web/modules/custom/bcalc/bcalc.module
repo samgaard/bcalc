@@ -7,6 +7,7 @@
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\charts\Charts\ModuleSelector;
 
 /**
  * Implements hook_help().
@@ -48,4 +49,13 @@ function bcalc_form_alter(&$form, FormStateInterface $form_state) {
     $form['relations']['#open'] = true;
     $form['relations']['weight']['#access'] = false;
   }
+}
+
+/**
+ * Implements template_preprocess_page
+ *
+ * @param $variables
+ */
+function bcalc_preprocess_charts_api_example(&$variables) {
+  $moduleSelector = new ModuleSelector($variables['library'], $variables['categories'], $variables['seriesData'], $variables['options'], [], $variables, 'xyz' . rand());
 }
