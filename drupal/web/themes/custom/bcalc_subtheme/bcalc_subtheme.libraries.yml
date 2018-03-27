@@ -18,4 +18,3 @@ bootstrap-scripts:
     bootstrap/js/tab.js: {}
     bootstrap/js/transition.js: {}
     js/bcalc.js: {}
-    js/charts_highcharts.js: {}
