@@ -55,13 +55,15 @@ class Homepage extends ControllerBase {
 
         //CHART
         $chart = $this->buildChart('2018' . $month);
+        $chart2 = $this->buildChart('2018' . $month, true);
 
         $tabs_content[] = [
           'active' => $active,
           'month_name' => strtolower($monthName),
           'content' => $viewRendered['#markup'],
           'edit_arg' => '2018-' . $dateObj->format('m'),
-          'chart' => $chart
+          'chart' => $chart,
+          'chart2' => $chart2
         ];
 
         $url = Url::fromUserInput('#' . strtolower($monthName), ['attributes' => ['data-toggle' => 'tab']]);
@@ -92,34 +94,57 @@ class Homepage extends ControllerBase {
 
   private function buildChart($year_month, $income = false) {
     $connection = Database::getConnection();
-    $query = "SELECT parent_term.name AS parent_name, SUM(amount.field_amount_value) AS amount, MIN(nfd.nid) AS nid, MIN(catdata.tid) AS cat_tid, MIN(parent_term.tid) AS parent_tid
-FROM 
-{node_field_data} nfd
-LEFT JOIN {node__field_category} nfc ON nfd.nid = nfc.entity_id
-LEFT JOIN {taxonomy_term_field_data} catdata ON nfc.field_category_target_id = catdata.tid
-LEFT JOIN {taxonomy_term_hierarchy} h ON catdata.tid = h.tid
-LEFT JOIN {taxonomy_term_field_data} parent_term ON h.parent = parent_term.tid
-LEFT JOIN {node__field_amount} amount ON nfd.nid = amount.entity_id
-LEFT JOIN {node__field_trans_date} transdate ON nfd.nid = transdate.entity_id 
-WHERE ((DATE_FORMAT(transdate.field_trans_date_value, '%Y%m') = :year_date)) 
-AND ((nfd.status = '1') 
-AND (nfd.type IN ('line_item')) 
-AND (amount.field_amount_value IS NOT NULL) 
-AND (parent_term.name IS NOT NULL))
-GROUP BY parent_name";
+
+    $query = "";
+
+    if($income) {
+      $query .= "SELECT MIN(parent_term.name) AS parent_name, catdata.name AS cat_name,";
+    } else {
+      $query .= "SELECT parent_term.name AS parent_name, MIN(catdata.name) AS cat_name,";
+    }
+
+    $query .= " SUM(amount.field_amount_value) AS amount, MIN(nfd.nid) AS nid, MIN(catdata.tid) AS cat_tid, MIN(parent_term.tid) AS parent_tid
+    FROM 
+    {node_field_data} nfd
+    LEFT JOIN {node__field_category} nfc ON nfd.nid = nfc.entity_id
+    LEFT JOIN {taxonomy_term_field_data} catdata ON nfc.field_category_target_id = catdata.tid
+    LEFT JOIN {taxonomy_term_hierarchy} h ON catdata.tid = h.tid
+    LEFT JOIN {taxonomy_term_field_data} parent_term ON h.parent = parent_term.tid
+    LEFT JOIN {node__field_amount} amount ON nfd.nid = amount.entity_id
+    LEFT JOIN {node__field_trans_date} transdate ON nfd.nid = transdate.entity_id 
+    WHERE ((DATE_FORMAT(transdate.field_trans_date_value, '%Y%m') = :year_date)) 
+    AND ((nfd.status = '1') 
+    AND (nfd.type IN ('line_item')) 
+    AND (amount.field_amount_value IS NOT NULL)";
+
+    if($income) {
+      $query .= " AND (catdata.name IS NOT NULL)) GROUP BY cat_name";
+    } else {
+      $query .= " AND (parent_term.name IS NOT NULL)) GROUP BY parent_name";
+    }
 
     $results = $connection->query($query, [':year_date' => $year_month])->fetchAll();
 
     $categories = [];
     $seriesData = [];
     $numbers = [];
+    $options = [];
+    $options['title'] = '';
 
     foreach ($results as $key => $result) {
       if($result->amount) {
-        if($result->parent_name != 'Income') {
+        if($result->parent_name != 'Income' && !$income) {
+          $options['title'] = 'Spending';
           $categories[] = $result->parent_name;
           $numbers[] = [
             'name' => $result->parent_name,
+            'y' => (int) $result->amount
+          ];
+        } else if($result->parent_name == 'Income' && $income) {
+          $options['title'] = 'Income';
+          $categories[] = $result->cat_name;
+          $numbers[] = [
+            'name' => $result->cat_name,
             'y' => (int) $result->amount
           ];
         }
@@ -127,15 +152,12 @@ GROUP BY parent_name";
     }
     $seriesData[] = ["data" => $numbers];
 
-    $options = [];
-    $options['title'] = '';
     $options['type'] = 'pie';
     $options['yaxis_title'] = t('Y-Axis');
     $options['yaxis_min'] = '';
     $options['yaxis_max'] = '';
     $options['xaxis_labels_rotation'] = 0;
     $options['xaxis_title'] = t('X-Axis');
-    // Sample data format.
 
     return  [
       '#theme' => 'charts_api_example',
@@ -144,7 +166,6 @@ GROUP BY parent_name";
       '#seriesData' => $seriesData,
       '#options' => $options,
     ];
-
   }
 }
 

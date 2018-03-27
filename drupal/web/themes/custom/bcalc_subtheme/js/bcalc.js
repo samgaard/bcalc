@@ -20,7 +20,7 @@
                             showInLegend: true,
                             dataLabels: {
                                 enabled: true,
-                                format: '<b>{point.name}</b>: {point.percentage:.0f}%<br>${point.y}'
+                                format: '<b>{point.name}</b><br>${point.y} ({point.percentage:.0f}%)'
                             }
                         };
 
@@ -34,7 +34,7 @@
                             var sliceIndex = this.point.index;
                             var sliceName = this.series.chart.axes[0].categories[sliceIndex];
                             return '' + sliceName +
-                                ' : {point.percentage:.0f}% ' + this.y + '';
+                                ' : $' + this.y + ' (' + this.percentage.toFixed(0) + '%)';
                         };
 
                         console.log(hc);
