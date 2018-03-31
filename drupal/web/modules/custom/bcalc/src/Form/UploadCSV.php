@@ -101,6 +101,23 @@ class UploadCSV extends FormBase {
         'Type',
         'Balance',
         'Check or Slip #',
+      ],
+      'hsa_bank' => [
+        'Requested Date',
+        'Description',
+        'Amount',
+        'Processed Date',
+        'Available Cash Balance',
+        'Method',
+        'Applied to Contribution Maximum',
+        'Check Number',
+        'Check Date',
+        'Date of Service',
+        'Merchant Name',
+        'Adjustment Reason',
+        'Consumer Note',
+        'Tax Year',
+        'Tax Detail'
       ]
     ];
   }
@@ -161,11 +178,23 @@ class UploadCSV extends FormBase {
             $transaction_description = $lineitem['Description'];
             $transaction_date = $lineitem['Posting Date'];
             $transaction_amount = $lineitem['Amount'];
-
             if(strpos($transaction_description, 'Payment to Chase') !== false) {
               continue 2;
             }
+            break;
+          case 'hsa_bank':
+            if($lineitem['Amount'] > 0) {
+              $transaction_type = 'Money In';
+            } else {
+              $transaction_type = 'Money Out';
+            }
+            $transaction_description = $lineitem['Description'];
+            $transaction_date = $lineitem['Requested Date'];
+            $transaction_amount = $lineitem['Amount'];
 
+            if(strpos($transaction_description, 'Interest') !== false) {
+              continue 2;
+            }
             break;
         }
 
