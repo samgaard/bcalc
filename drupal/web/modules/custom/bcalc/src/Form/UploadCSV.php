@@ -156,42 +156,33 @@ class UploadCSV extends FormBase {
       //LOOP THROUGH ALL ITEMS
       foreach ($lineitems AS $lineitem) {
 
+        //SO FAR THESE ARE UNIVERSAL BUT CAN BE OVERWRITTEN IN SWITCH
+        $transaction_description = $lineitem['Description'];
+
+        if(!is_numeric($lineitem['Amount'])) {
+          continue;
+        }
+        $transaction_amount = $lineitem['Amount'];
+
+        if($transaction_amount > 0) {
+          $transaction_type = 'Money In';
+        } else {
+          $transaction_type = 'Money Out';
+        }
+
         //INTERPRET DATA BASED ON FILE FORMAT
         switch ($file_format) {
           case 'chase_cc_statement':
-            $transaction_description = $lineitem['Description'];
-            $transaction_type = $lineitem['Type'];
             $transaction_date = $lineitem['Trans Date'];
-            $transaction_amount = $lineitem['Amount'];
             break;
           case 'chase_checking':
-            $transaction_type = '';
-            switch($lineitem['Details']) {
-              case 'DEBIT':
-                $transaction_type = 'Money Out';
-                break;
-              case 'CREDIT':
-              case 'DSLIP':
-                $transaction_type = 'Money In';
-                break;
-            }
-            $transaction_description = $lineitem['Description'];
             $transaction_date = $lineitem['Posting Date'];
-            $transaction_amount = $lineitem['Amount'];
             if(strpos($transaction_description, 'Payment to Chase') !== false) {
               continue 2;
             }
             break;
           case 'hsa_bank':
-            if($lineitem['Amount'] > 0) {
-              $transaction_type = 'Money In';
-            } else {
-              $transaction_type = 'Money Out';
-            }
-            $transaction_description = $lineitem['Description'];
             $transaction_date = $lineitem['Requested Date'];
-            $transaction_amount = $lineitem['Amount'];
-
             if(strpos($transaction_description, 'Interest') !== false) {
               continue 2;
             }
