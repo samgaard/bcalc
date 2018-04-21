@@ -61,7 +61,13 @@ class LineItems extends FormBase {
     $options = [''];
     foreach ($terms as $parent) {
       foreach ($parent->children as $child) {
-        $options[$parent->name][$child->tid] = $child->name;
+        if(isset($child->children) && count($child->children)) {
+          foreach ($child->children as $baby_child) {
+            $options[$parent->name][$baby_child->tid] = $baby_child->name;
+          }
+        } else {
+          $options[$parent->name][$child->tid] = $child->name;
+        }
       }
     }
 
