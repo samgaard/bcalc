@@ -42,40 +42,55 @@ class Homepage extends ControllerBase {
     for($i=1;$i<=12;$i++) {
 
       $month = str_pad($i, 2, '0', STR_PAD_LEFT);
+      $year = 2017;
 
-      $view = Views::getView('line_items');
-      $view->setDisplay('block_1');
-      $view->setArguments(array('2018' . $month));
-      $viewRendered = $view->render();
-      if($viewRendered['#rows']) {
-        \Drupal::service('renderer')->render($viewRendered);
+      $year_month = $year . '-' . $month;
+      $beginning_of_month = $year_month . '-01';
+      $end_of_month = $year_month . '-' . cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
+      $count = \Drupal::entityQuery('node')
+        ->condition('type', 'line_item')
+        ->condition('field_trans_date', [
+          $beginning_of_month,
+          $end_of_month
+        ], 'BETWEEN')
+        ->condition('uid', \Drupal::currentUser()->id())
+        ->sort('field_trans_date')
+        ->count()
+        ->execute();
+
+      if ($count) {
+        $content = views_embed_view('category_summary', 'default', $year . $month);
         $dateObj = \DateTime::createFromFormat('!m', $i);
         $monthName = $dateObj->format('F');
 
         //CHART
-        $chart = $this->buildChart('2018' . $month);
-        $chart2 = $this->buildChart('2018' . $month, true);
+        //$chart = $this->buildChart('2018' . $month);
+        //$chart2 = $this->buildChart('2018' . $month, TRUE);
 
         $tabs_content[] = [
           'active' => $active,
           'month_name' => strtolower($monthName),
-          'content' => $viewRendered['#markup'],
+          'content' => $content,
           'edit_arg' => '2018-' . $dateObj->format('m'),
-          'chart' => $chart,
-          'chart2' => $chart2
+          'chart' => '',
+          'chart2' => ''
         ];
 
         $url = Url::fromUserInput('#' . strtolower($monthName), ['attributes' => ['data-toggle' => 'tab']]);
         $link = Link::fromTextAndUrl(t($monthName), $url)->toString();
 
         if ($active) {
-          $items[] = ['#markup' => $link, '#wrapper_attributes' => ['class' => 'active']];
-        } else {
+          $items[] = [
+            '#markup' => $link,
+            '#wrapper_attributes' => ['class' => 'active']
+          ];
+        }
+        else {
           $items[] = $link;
         }
 
-        if($active) {
+        if ($active) {
           $active = FALSE;
         }
       }
@@ -88,7 +103,6 @@ class Homepage extends ControllerBase {
         'class' => 'nav nav-tabs'
       ]
     ];
-
     return ['tabs' => $list, 'content' => $tabs_content];
   }
 
