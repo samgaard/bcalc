@@ -2,12 +2,26 @@
 <div class="tab-content">
     {% for month in tabscontent %}
         <div id="{{ month.month_name }}" class="tab-pane fade in{% if month.active %} active {% endif %}">
-            <div class="row"> <p><a class="btn btn-default pull-right" href="/bcalc/line-items/edit/{{ month.edit_arg }}">Edit Line Items</a></p></div>
+            <div class="row"><p><a class="btn btn-default pull-right edit-line-items" href="/bcalc/line-items/edit/{{ month.edit_arg }}">Edit Line Items</a></p></div>
             <div class="row">
                 <div class="col-xs-12 col-sm-6">{{ month.chart }}</div>
                 <div class="col-xs-12 col-sm-6">{{ month.chart2 }}</div>
             </div>
-            {{ month.content }}
+            <div class="col-xs-12">
+                <div><strong>Income:</strong> {{ month.paychecks }}</div>
+                <div><strong>From Trust:</strong> {{ month.from_trust }}</div>
+                <div><strong>From Savings:</strong> {{ month.from_savings }}</div>
+                <div><strong>Total In:</strong> {{ month.total_in }}</div>
+                <br />
+                <div><strong>Money Out:</strong> {{ month.total_out }}</div>
+                <div><strong>Uncategorized:</strong> {{ month.uncategorized }}</div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                {% for category in month.tables %}
+                    <h3>{{ category.title }}</h3>
+                    {{ category.table }}
+                {% endfor %}
+            </div>
         </div>
     {% endfor %}
 </div>

@@ -4,7 +4,8 @@ namespace Drupal\bcalc\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Database;
-use Drupal\views\Views;
+use Drupal\node\Entity\Node;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 
@@ -32,46 +33,200 @@ class Homepage extends ControllerBase {
       ]
     ];
   }
+
   private function buildHomepageTabs() {
 
     $items = [];
-
     $tabs_content = [];
-
     $active = TRUE;
-    for($i=1;$i<=12;$i++) {
 
+    //MAKE A TAB FOR EACH MONTH
+    for ($i = 1; $i <= 12; $i++) {
+
+      //FORMAT BEGINNING AND END OF MONTH
       $month = str_pad($i, 2, '0', STR_PAD_LEFT);
-      $year = 2018;
-
+      $year = date('Y');
       $year_month = $year . '-' . $month;
       $beginning_of_month = $year_month . '-01';
       $end_of_month = $year_month . '-' . cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
-      $count = \Drupal::entityQuery('node')
+      //FIND LINE ITEMS WITHIN THIS DATE RANGE
+      $ids = \Drupal::entityQuery('node')
         ->condition('type', 'line_item')
         ->condition('field_trans_date', [
           $beginning_of_month,
           $end_of_month
         ], 'BETWEEN')
         ->condition('uid', \Drupal::currentUser()->id())
-        ->sort('field_trans_date')
-        ->count()
         ->execute();
 
-      if ($count) {
-        $content = views_embed_view('category_summary', 'default', $year . $month);
+      if (count($ids)) {
+
+        //LOAD ENTITIES
+        $nodes = Node::loadMultiple($ids);
+
+        $tables =
+        $line_items =
+        $line_items['xtra'] = [];
+
+        $line_items['xtra']['total_out'] =
+        $line_items['xtra']['total_in'] =
+        $line_items['xtra']['paychecks'] =
+        $line_items['xtra']['from_savings'] =
+        $line_items['xtra']['from_trust'] =
+        $line_items['xtra']['uncategorized'] = 0;
+
+        //GROUP BY CATEGORY
+        foreach($nodes as $node) {
+
+          $amount = $node->get('field_amount')->value;
+
+          //CATEGORIZED
+          if ($cid = $node->get('field_category')->target_id) {
+
+            $category_term = Term::load($cid);
+
+            //GET TERM PARENT
+            $parents = \Drupal::entityTypeManager()
+              ->getStorage('taxonomy_term')
+              ->loadParents($category_term->id());
+            $parent_term = array_shift($parents);
+
+            //RECORD SEPARATE INCOME DETAILS
+            $income = FALSE;
+            if($parent_term->label() == "Income") {
+              $income = TRUE;
+              if($category_term->label() == "From Savings") {
+                $line_items['xtra']['from_savings'] += $amount;
+              }
+              if($category_term->label() == "Trust") {
+                $line_items['xtra']['from_trust'] += $amount;
+              }
+              if(in_array($category_term->label(), ['Emily Income', 'Sam Income', 'Other'])) {
+                $line_items['xtra']['paychecks'] += $amount;
+              }
+            }
+
+            //DEFAULT ARRAY KEYS. USE PARENT NAME AS KEY FOR SORTING
+            if(!isset($line_items[$parent_term->label()])) {
+              $line_items[$parent_term->label()] = ['sum' => 0];
+            }
+            if(!isset($line_items[$parent_term->label()][$cid])) {
+              $line_items[$parent_term->label()][$cid] = ['sum' => 0];
+            }
+            if(!isset($line_items[$parent_term->label()][$cid]['title'])) {
+              $line_items[$parent_term->label()][$cid]['title'] = $category_term->label();
+            }
+            if(!isset($line_items[$parent_term->label()]['title'])) {
+              $line_items[$parent_term->label()]['title'] = $parent_term->label();
+            }
+            if(!isset($line_items[$parent_term->label()][$cid]['title'])) {
+              $line_items[$parent_term->label()][$cid]['title'] = $category_term->label();
+            }
+
+            //PARENT TOTAL
+            $line_items[$parent_term->label()]['sum'] += $amount;
+
+            //CATEGORY TOTAL
+            $line_items[$parent_term->label()][$cid]['sum'] += $amount;
+
+            //MONTH TOTALS
+            if($income) {
+              $line_items['xtra']['total_in'] += $amount;
+            } else {
+              $line_items['xtra']['total_out'] += $amount;
+            }
+          }
+          else {
+            //NO CATEGORY
+            $line_items['xtra']['uncategorized'] += $amount;
+            //ADD TO TOTAL OUT
+            $line_items['xtra']['total_out'] += $amount;
+          }
+        }
+
+        $month_total_amount = $line_items['xtra']['total_out'];
+
+        //SORT BY PARENT NAME
+        ksort($line_items);
+
+        //BUILD TABLE OF DATA
+        $content = '';
+        foreach ($line_items as $parent_key => $parents) {
+          $rows = [];
+          if($parent_key != 'xtra') {
+            $cat_title = '';
+            $cat_sum = 0;
+            foreach ($parents as $cat_key => $cat_item) {
+              switch ($cat_key) {
+                case 'sum':
+                  $cat_sum = $cat_item;
+                  break;
+                case 'title':
+                  $cat_title = $cat_item;
+                  break;
+                default:
+                  //TABLE ROW
+                  if (is_numeric($cat_key)) {
+                    $rows[] = [
+                      [
+                        'data' => $parents[$cat_key]['title'],
+                      ],
+                      [
+                        'data' => $parents[$cat_key]['sum'],
+                        'class' => 'text-right'
+                      ]
+                    ];
+                  }
+                  break;
+              }
+            }
+
+            //APPEND PERCENT NEXT TO PARENT NAME
+            if($cat_title != 'Income') {
+              $cat_title .= ' ' . number_format((($cat_sum / $month_total_amount) * 100)) . '%';
+            }
+
+            //TOTAL ROW
+            $rows[] = [
+              'data' => [
+                'Total',
+                [
+                  'data' => $cat_sum,
+                  'class' => 'text-right',
+                ],
+              ],
+              'class' => 'total-row'
+            ];
+
+            //THEME TABLE
+            $table = [
+              '#theme' => 'table',
+              '#rows' => $rows,
+              '#header' => []
+            ];
+
+            //ADD TO TABLES ARRAY WITH CATEGORY TITLE
+            $tables[] = [
+              'title' => $cat_title,
+              'table' => $table
+            ];
+          }
+        }
+
         $dateObj = \DateTime::createFromFormat('!m', $i);
         $monthName = $dateObj->format('F');
-
-        //CHART
-        //$chart = $this->buildChart('2018' . $month);
-        //$chart2 = $this->buildChart('2018' . $month, TRUE);
 
         $tabs_content[] = [
           'active' => $active,
           'month_name' => strtolower($monthName),
-          'content' => $content,
+          'tables' => $tables,
+          'uncategorized' => $line_items['xtra']['uncategorized'],
+          'from_savings' => $line_items['xtra']['from_savings'],
+          'from_trust' => $line_items['xtra']['from_trust'],
+          'paychecks' => $line_items['xtra']['paychecks'],
+          'total_in' => $line_items['xtra']['total_in'],
+          'total_out' => $month_total_amount,
           'edit_arg' => '2018-' . $dateObj->format('m'),
           'chart' => '',
           'chart2' => ''
