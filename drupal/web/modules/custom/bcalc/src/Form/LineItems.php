@@ -5,7 +5,6 @@ namespace Drupal\bcalc\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
-use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
 
@@ -47,7 +46,9 @@ class LineItems extends FormBase {
       'Type',
       'Source',
       'Amount',
-      'Category'
+      'Category',
+      'Edit',
+      'Delete'
     ];
 
     $form['line_items_table'] = [
@@ -71,18 +72,12 @@ class LineItems extends FormBase {
       }
     }
 
-    //$return = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Return']);
-    //$payment = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'Payment']);
-    //$return_term = array_shift($return);
-    //$payment_term = array_shift($payment);
-
     $nids = \Drupal::entityQuery('node')
       ->condition('type', 'line_item')
       ->condition('field_trans_date', [
         $beginning_of_month,
         $end_of_month
       ], 'BETWEEN')
-      //->condition('field_transaction', [$return_term->id(),$payment_term->id()], 'NOT IN')
       ->condition('uid', \Drupal::currentUser()->id())
       ->sort('field_trans_date')
       ->execute();
@@ -122,6 +117,10 @@ class LineItems extends FormBase {
         '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', ['node' => $node_id], ['query' => ['destination' => '/bcalc/line-items/edit/' . $year_month]])
           ->toString(),
       ];
+      $form['line_items_table'][$node_id]['delete'] = [
+        'data' => ['#type' => 'checkbox'],
+        '#wrapper_attributes' => ['class' => ['text-center']],
+      ];
 
     }
 
@@ -142,35 +141,87 @@ class LineItems extends FormBase {
   }
 
   /**
-   * {@inheritdoc}
+   * @param array $form
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $form_values = $form_state->getValues();
+
+    $dblog_message = '';
+
     foreach ($form_values['line_items_table'] as $key => $value) {
 
       //LOAD NODE
       $node = Node::load($key);
 
-      //SET CATEGORY
-      $node->set('field_category', ['target_id' => $value['category']]);
+      $current_category = $node->get('field_category')->target_id;
 
-      //CHECK THAT SOURCE USES SAME CATEGORY FOR IMPORT CHECK
-      if ($source_tid = $node->get('field_source')->target_id) {
-        $source_term = Term::load($source_tid);
-        if ($source_category_tid = $source_term->get('field_category')->target_id) {
-          if ($source_category_tid != $value['category']) {
-            //IF THE SOURCE CATEGORY IS DIFFERENT, CHANGE IT
-            $source_term->set('field_category', $value['category']);
-            $source_term->save();
+      if($value['delete']['data'] > 0 || $current_category != $value['category']) {
+
+        $source_id = $node->get('field_source')->target_id;
+        if ($source_id > 0) {
+          $source_name = Term::load($source_id)->label();
+        }
+        else {
+          $source_name = $node->label();
+        }
+
+        if ($value['delete']['data'] > 0) {
+          //set message
+          $log_message = "Deleted line item {$source_name} ({$node->id()}).";
+          \Drupal::messenger()->addMessage($log_message);
+          $dblog_message .= $log_message . '<br />';
+          $node->delete();
+          continue;
+        }
+
+        //CHANGED LINE ITEM CATEGORY
+        if ($current_category != $value['category']) {
+
+          if ($value['category'] > 0) {
+            $term = Term::load($value['category']);
+          }
+          if ($current_category > 0) {
+            $old_term = Term::load($current_category);
+            if ($value['category'] == 0) {
+              $log_message = "Removed category {$old_term->label()} FROM \"{$source_name} ({$node->id()})\".";
+            }
+            else {
+              $log_message = "Changed \"{$source_name} ({$node->id()})\" FROM {$old_term->label()} TO {$term->label()}.";
+            }
+          }
+          else {
+            $log_message = "Added category {$term->label()} TO \"{$source_name} ({$node->id()})\".";
+          }
+          \Drupal::messenger()->addMessage($log_message);
+          $dblog_message .= $log_message . '<br />';
+
+          //SET CATEGORY
+          $node->set('field_category', ['target_id' => $value['category']]);
+          //SAVE NODE
+          $node->save();
+        }
+
+        if ($value['category'] > 0) {
+          //CHECK THAT SOURCE USES SAME CATEGORY FOR IMPORT CHECK
+          if ($source_tid = $node->get('field_source')->target_id) {
+            $source_term = Term::load($source_tid);
+            $source_category_tid = $source_term->get('field_category')->target_id;
+            if ($source_category_tid != $value['category']) {
+              //IF THE SOURCE CATEGORY IS DIFFERENT, CHANGE IT
+              $source_term->set('field_category', $value['category']);
+              $source_term->save();
+            }
           }
         }
       }
-
-      //SAVE NODE
-      $node->save();
     }
 
-
+    if ($dblog_message != '') {
+      \Drupal::logger('line_items')->notice($dblog_message);
+    }
   }
 
 }
