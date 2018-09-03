@@ -169,8 +169,11 @@ class LineItems extends FormBase {
         }
 
         if ($value['delete']['data'] > 0) {
+          $line_item_amount = $node->get('field_amount')->value;
+          $line_item_date = $node->get('field_trans_date')->value;
+
           //set message
-          $log_message = "Deleted line item {$source_name} ({$node->id()}).";
+          $log_message = "Deleted line item {$source_name} ({$line_item_amount} on {$line_item_date}).";
           \Drupal::messenger()->addMessage($log_message);
           $dblog_message .= $log_message . '<br />';
           $node->delete();
