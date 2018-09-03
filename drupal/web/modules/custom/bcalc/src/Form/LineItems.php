@@ -114,7 +114,7 @@ class LineItems extends FormBase {
       ];
       $form['line_items_table'][$node_id]['edit'] = [
         '#type' => 'markup',
-        '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', ['node' => $node_id], ['query' => ['destination' => '/bcalc/line-items/edit/' . $year_month]])
+        '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', ['node' => $node_id, 'destination' => '/bcalc/line-items/edit/' . $year_month], ['attributes' => ['target' => '_blank']])
           ->toString(),
       ];
       $form['line_items_table'][$node_id]['delete'] = [
