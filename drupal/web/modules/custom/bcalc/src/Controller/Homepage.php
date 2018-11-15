@@ -4,6 +4,7 @@ namespace Drupal\bcalc\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Database;
+use Drupal\Core\Render\Markup;
 use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Link;
@@ -94,7 +95,7 @@ class Homepage extends ControllerBase {
 
             //RECORD SEPARATE INCOME DETAILS
             $income = FALSE;
-            if($parent_term->label() == "Income") {
+            if(!empty($parent_term) && $parent_term->label() == "Income") {
               $income = TRUE;
               if($category_term->label() == "From Savings") {
                 $line_items['xtra']['from_savings'] += $amount;
@@ -141,7 +142,7 @@ class Homepage extends ControllerBase {
             //NO CATEGORY
             $line_items['xtra']['uncategorized'] += $amount;
             //ADD TO TOTAL OUT
-            $line_items['xtra']['total_out'] += $amount;
+            //$line_items['xtra']['total_out'] += $amount;
           }
         }
 
@@ -157,6 +158,10 @@ class Homepage extends ControllerBase {
           if($parent_key != 'xtra') {
             $cat_title = '';
             $cat_sum = 0;
+            $chart = '';
+            $categories = [];
+            $numbers = [];
+
             foreach ($parents as $cat_key => $cat_item) {
               switch ($cat_key) {
                 case 'sum':
@@ -176,6 +181,13 @@ class Homepage extends ControllerBase {
                         'data' => $parents[$cat_key]['sum'],
                         'class' => 'text-right'
                       ]
+                    ];
+
+                    //DATA FOR CHART
+                    $categories[] = $parents[$cat_key]['title'];
+                    $numbers[] = [
+                      'name' => $parents[$cat_key]['title'],
+                      'y' => (int) $parents[$cat_key]['sum'],
                     ];
                   }
                   break;
@@ -206,16 +218,25 @@ class Homepage extends ControllerBase {
               '#header' => []
             ];
 
+            //CHART
+            if (!empty($numbers)) {
+              $chart = $this->categoryChart($categories, $numbers,'Series ' . $parent_key);
+            }
+
             //ADD TO TABLES ARRAY WITH CATEGORY TITLE
             $tables[] = [
               'title' => $cat_title,
-              'table' => $table
+              'table' => $table,
+              'chart' => $chart
             ];
           }
         }
 
         $dateObj = \DateTime::createFromFormat('!m', $i);
         $monthName = $dateObj->format('F');
+
+
+        $build_chart = ''; //$this->buildChart('2018' . $month);
 
         $tabs_content[] = [
           'active' => $active,
@@ -228,7 +249,7 @@ class Homepage extends ControllerBase {
           'total_in' => $line_items['xtra']['total_in'],
           'total_out' => $month_total_amount,
           'edit_arg' => '2018-' . $dateObj->format('m'),
-          'chart' => '',
+          'chart' => $build_chart,
           'chart2' => ''
         ];
 
@@ -277,8 +298,8 @@ class Homepage extends ControllerBase {
     {node_field_data} nfd
     LEFT JOIN {node__field_category} nfc ON nfd.nid = nfc.entity_id
     LEFT JOIN {taxonomy_term_field_data} catdata ON nfc.field_category_target_id = catdata.tid
-    LEFT JOIN {taxonomy_term_hierarchy} h ON catdata.tid = h.tid
-    LEFT JOIN {taxonomy_term_field_data} parent_term ON h.parent = parent_term.tid
+    LEFT JOIN {taxonomy_term__parent} h ON catdata.tid = h.parent_target_id
+    LEFT JOIN {taxonomy_term_field_data} parent_term ON h.parent_target_id = parent_term.tid
     LEFT JOIN {node__field_amount} amount ON nfd.nid = amount.entity_id
     LEFT JOIN {node__field_trans_date} transdate ON nfd.nid = transdate.entity_id 
     WHERE ((DATE_FORMAT(transdate.field_trans_date_value, '%Y%m') = :year_date)) 
@@ -301,7 +322,7 @@ class Homepage extends ControllerBase {
     $options['title'] = '';
 
     foreach ($results as $key => $result) {
-      if($result->amount) {
+      if($result->amount && isset($result->parent_name)) {
         if($result->parent_name != 'Income' && !$income) {
           $options['title'] = 'Spending';
           $categories[] = $result->parent_name;
@@ -319,14 +340,27 @@ class Homepage extends ControllerBase {
         }
       }
     }
-    $seriesData[] = ["data" => $numbers];
+    $seriesData[] = [
+      'name' => 'Series 2',
+      'color' => '#8bbc21',
+      'type' => 'pie',
+      "data" => $numbers
+    ];
 
     $options['type'] = 'pie';
+    $options['data_labels'] = ['test'];
     $options['yaxis_title'] = t('Y-Axis');
     $options['yaxis_min'] = '';
     $options['yaxis_max'] = '';
     $options['xaxis_labels_rotation'] = 0;
     $options['xaxis_title'] = t('X-Axis');
+    $options['three_dimensional'] = FALSE;
+    $options['title_position'] = 'out';
+    $options['legend_position'] = 'right';
+
+    // Creates a UUID for the chart ID.
+    $uuid_service = \Drupal::service('uuid');
+    $chartId = 'chart-' . $uuid_service->generate();
 
     return  [
       '#theme' => 'charts_api_example',
@@ -334,6 +368,121 @@ class Homepage extends ControllerBase {
       '#categories' => $categories,
       '#seriesData' => $seriesData,
       '#options' => $options,
+      '#id' => $chartId,
+    ];
+
+
+
+    /*
+     *
+    // Customize options here.
+    $options = [
+      'type' => $this->chartSettings['type'],
+      'title' => $this->t('Chart title'),
+      'xaxis_title' => $this->t('X-Axis'),
+      'yaxis_title' => $this->t('Y-Axis'),
+      'yaxis_min' => '',
+      'yaxis_max' => '',
+      'three_dimensional' => FALSE,
+      'title_position' => 'out',
+      'legend_position' => 'right',
+      'data_labels'=> $this->chartSettings['data_labels'],
+      // 'grouping'   => TRUE,
+      'colors'   => $this->chartSettings['colors'],
+      'min'   => $this->chartSettings['min'],
+      'max'   => $this->chartSettings['max'],
+      'yaxis_prefix'   => $this->chartSettings['yaxis_prefix'],
+      'yaxis_suffix'   => $this->chartSettings['yaxis_suffix'],
+      'data_markers'   => $this->chartSettings['data_markers'],
+      'red_from'   => $this->chartSettings['red_from'],
+      'red_to'   => $this->chartSettings['red_to'],
+      'yellow_from'   => $this->chartSettings['yellow_from'],
+      'yellow_to'   => $this->chartSettings['yellow_to'],
+      'green_from'   => $this->chartSettings['green_from'],
+      'green_to'   => $this->chartSettings['green_to'],
+    ];
+
+    // Sample data format.
+    $categories = ['Category 1', 'Category 2', 'Category 3', 'Category 4'];
+    $seriesData[] = [
+      'name' => 'Series 1',
+      'color' => '#0d233a',
+      'type' => NULL,
+      'data' => [250, 350, 400, 200],
+    ];
+    switch ($this->chartSettings['type']) {
+      default:
+        $seriesData[] = [
+          'name' => 'Series 2',
+          'color' => '#8bbc21',
+          'type' => 'column',
+          'data' => [150, 450, 500, 300],
+        ];
+        $seriesData[] = [
+          'name' => 'Series 3',
+          'color' => '#910000',
+          'type' => 'area',
+          'data' => [0, 0, 60, 90],
+        ];
+      case 'pie':
+      case 'donut':
+
+    }
+
+    // Creates a UUID for the chart ID.
+    //$uuid_service = \Drupal::service('uuid');
+    $chartId = 'chart-' . $this->uuidService->generate();
+
+    $build = [
+      '#theme' => 'charts_api_example',
+      '#library' => (string) $library,
+      '#categories' => $categories,
+      '#seriesData' => $seriesData,
+      '#options' => $options,
+      '#id' => $chartId,
+      '#override' => [],
+    ];
+
+    return $build;
+     */
+
+
+  }
+
+  private function categoryChart($categories = [], $numbers = [], $series_name = '') {
+    $seriesData = [];
+    $options = [];
+    $options['title'] = '';
+
+    $seriesData[] = [
+      'name' => $series_name,
+      'color' => '#8bbc21',
+      'type' => 'pie',
+      "data" => $numbers,
+    ];
+
+    $options['type'] = 'pie';
+    $options['data_labels'] = ['test'];
+    $options['yaxis_title'] = t('Y-Axis');
+    $options['yaxis_min'] = '';
+    $options['yaxis_max'] = '';
+    $options['xaxis_labels_rotation'] = 0;
+    $options['xaxis_title'] = t('X-Axis');
+    $options['three_dimensional'] = FALSE;
+    $options['title_position'] = 'out';
+    $options['legend_position'] = 'right';
+
+    // Creates a UUID for the chart ID.
+    $uuid_service = \Drupal::service('uuid');
+    $chartId = 'chart-' . $uuid_service->generate();
+
+    return [
+      '#theme' => 'charts_api_example',
+      '#library' => 'highcharts',
+      '#categories' => $categories,
+      '#seriesData' => $seriesData,
+      '#options' => $options,
+      '#id' => $chartId,
     ];
   }
 }
