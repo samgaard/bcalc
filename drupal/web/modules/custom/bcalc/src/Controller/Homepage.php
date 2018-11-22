@@ -219,7 +219,7 @@ class Homepage extends ControllerBase {
             ];
 
             //CHART
-            if (!empty($numbers)) {
+            if (!empty($numbers) && count($categories) > 1) {
               $chart = $this->categoryChart($categories, $numbers,'Series ' . $parent_key);
             }
 
@@ -306,7 +306,8 @@ class Homepage extends ControllerBase {
     WHERE ((DATE_FORMAT(transdate.field_trans_date_value, '%Y%m') = :year_date)) 
     AND ((nfd.status = '1') 
     AND (nfd.type IN ('line_item')) 
-    AND (amount.field_amount_value IS NOT NULL)";
+    AND (amount.field_amount_value IS NOT NULL)
+    AND nfd.uid = :uid";
 
     if($income) {
       $query .= " AND (catdata.name IS NOT NULL)) GROUP BY cat_name";
@@ -314,7 +315,7 @@ class Homepage extends ControllerBase {
       $query .= " AND (parent_term.name IS NOT NULL)) GROUP BY parent_name";
     }
 
-    $results = $connection->query($query, [':year_date' => $year_month])->fetchAll();
+    $results = $connection->query($query, [':year_date' => $year_month, ':uid' => \Drupal::currentUser()->id()])->fetchAll();
 
     $categories = [];
     $seriesData = [];

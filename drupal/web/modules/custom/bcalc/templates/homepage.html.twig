@@ -7,22 +7,28 @@
                 <div class="col-xs-12 col-sm-6">{{ month.chart }}</div>
                 <div class="col-xs-12 col-sm-6">{{ month.chart2 }}</div>
             </div>
-            <div class="col-xs-12">
-                <div><strong>Income:</strong> {{ month.paychecks }}</div>
-                <div><strong>From Trust:</strong> {{ month.from_trust }}</div>
-                <div><strong>From Savings:</strong> {{ month.from_savings }}</div>
-                <div><strong>Total In:</strong> {{ month.total_in }}</div>
-                <br />
-                <div><strong>Money Out:</strong> {{ month.total_out }}</div>
-                <div><strong>Uncategorized:</strong> {{ month.uncategorized }}</div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div><strong>Income:</strong> {{ month.paychecks }}</div>
+                    <div><strong>From Trust:</strong> {{ month.from_trust }}</div>
+                    <div><strong>From Savings:</strong> {{ month.from_savings }}</div>
+                    <div><strong>Total In:</strong> {{ month.total_in }}</div>
+                    <br />
+                    <div><strong>Money Out:</strong> {{ month.total_out }}</div>
+                    <div><strong>Uncategorized:</strong> {{ month.uncategorized }}</div>
+                </div>
             </div>
             {% for category in month.tables %}
-                <div class="col-xs-12 col-sm-6">
-                    <h3>{{ category.title }}</h3>
-                    {{ category.table }}
-                </div>
-                <div class="col-xs-12 col-sm-6">
-                    {{ category.chart }}
+                <div class="row cat-row">
+                    <div class="col-xs-12 col-sm-6">
+                        <h3>{{ category.title }}</h3>
+                        {{ category.table }}
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        {% if category.chart %}
+                            {{ category.chart }}
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
         </div>
