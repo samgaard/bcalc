@@ -236,7 +236,8 @@ class Homepage extends ControllerBase {
         $monthName = $dateObj->format('F');
 
 
-        $build_chart = ''; //$this->buildChart('2018' . $month);
+        $build_chart = $this->buildChart('2018' . $month);
+        $build_chart2 = $this->buildChart('2018' . $month, true);
 
         $tabs_content[] = [
           'active' => $active,
@@ -250,7 +251,7 @@ class Homepage extends ControllerBase {
           'total_out' => $month_total_amount,
           'edit_arg' => '2018-' . $dateObj->format('m'),
           'chart' => $build_chart,
-          'chart2' => ''
+          'chart2' => $build_chart2
         ];
 
         $url = Url::fromUserInput('#' . strtolower($monthName), ['attributes' => ['data-toggle' => 'tab']]);
@@ -298,7 +299,7 @@ class Homepage extends ControllerBase {
     {node_field_data} nfd
     LEFT JOIN {node__field_category} nfc ON nfd.nid = nfc.entity_id
     LEFT JOIN {taxonomy_term_field_data} catdata ON nfc.field_category_target_id = catdata.tid
-    LEFT JOIN {taxonomy_term__parent} h ON catdata.tid = h.parent_target_id
+    LEFT JOIN {taxonomy_term__parent} h ON catdata.tid = h.entity_id
     LEFT JOIN {taxonomy_term_field_data} parent_term ON h.parent_target_id = parent_term.tid
     LEFT JOIN {node__field_amount} amount ON nfd.nid = amount.entity_id
     LEFT JOIN {node__field_trans_date} transdate ON nfd.nid = transdate.entity_id 
@@ -370,82 +371,6 @@ class Homepage extends ControllerBase {
       '#options' => $options,
       '#id' => $chartId,
     ];
-
-
-
-    /*
-     *
-    // Customize options here.
-    $options = [
-      'type' => $this->chartSettings['type'],
-      'title' => $this->t('Chart title'),
-      'xaxis_title' => $this->t('X-Axis'),
-      'yaxis_title' => $this->t('Y-Axis'),
-      'yaxis_min' => '',
-      'yaxis_max' => '',
-      'three_dimensional' => FALSE,
-      'title_position' => 'out',
-      'legend_position' => 'right',
-      'data_labels'=> $this->chartSettings['data_labels'],
-      // 'grouping'   => TRUE,
-      'colors'   => $this->chartSettings['colors'],
-      'min'   => $this->chartSettings['min'],
-      'max'   => $this->chartSettings['max'],
-      'yaxis_prefix'   => $this->chartSettings['yaxis_prefix'],
-      'yaxis_suffix'   => $this->chartSettings['yaxis_suffix'],
-      'data_markers'   => $this->chartSettings['data_markers'],
-      'red_from'   => $this->chartSettings['red_from'],
-      'red_to'   => $this->chartSettings['red_to'],
-      'yellow_from'   => $this->chartSettings['yellow_from'],
-      'yellow_to'   => $this->chartSettings['yellow_to'],
-      'green_from'   => $this->chartSettings['green_from'],
-      'green_to'   => $this->chartSettings['green_to'],
-    ];
-
-    // Sample data format.
-    $categories = ['Category 1', 'Category 2', 'Category 3', 'Category 4'];
-    $seriesData[] = [
-      'name' => 'Series 1',
-      'color' => '#0d233a',
-      'type' => NULL,
-      'data' => [250, 350, 400, 200],
-    ];
-    switch ($this->chartSettings['type']) {
-      default:
-        $seriesData[] = [
-          'name' => 'Series 2',
-          'color' => '#8bbc21',
-          'type' => 'column',
-          'data' => [150, 450, 500, 300],
-        ];
-        $seriesData[] = [
-          'name' => 'Series 3',
-          'color' => '#910000',
-          'type' => 'area',
-          'data' => [0, 0, 60, 90],
-        ];
-      case 'pie':
-      case 'donut':
-
-    }
-
-    // Creates a UUID for the chart ID.
-    //$uuid_service = \Drupal::service('uuid');
-    $chartId = 'chart-' . $this->uuidService->generate();
-
-    $build = [
-      '#theme' => 'charts_api_example',
-      '#library' => (string) $library,
-      '#categories' => $categories,
-      '#seriesData' => $seriesData,
-      '#options' => $options,
-      '#id' => $chartId,
-      '#override' => [],
-    ];
-
-    return $build;
-     */
-
 
   }
 
