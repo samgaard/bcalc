@@ -220,7 +220,7 @@ class Homepage extends ControllerBase {
 
             //CHART
             if (!empty($numbers) && count($categories) > 1) {
-              $chart = $this->categoryChart($categories, $numbers,'Series ' . $parent_key);
+              $chart = $this->buildChart($categories, $numbers,'Series ' . $parent_key);
             }
 
             //ADD TO TABLES ARRAY WITH CATEGORY TITLE
@@ -236,8 +236,8 @@ class Homepage extends ControllerBase {
         $monthName = $dateObj->format('F');
 
 
-        $build_chart = $this->buildChart('2018' . $month);
-        $build_chart2 = $this->buildChart('2018' . $month, true);
+        $build_chart = $this->buildSummaryPieChart('2018' . $month);
+        $build_chart2 = $this->buildSummaryPieChart('2018' . $month, true);
 
         $tabs_content[] = [
           'active' => $active,
@@ -283,42 +283,11 @@ class Homepage extends ControllerBase {
     return ['tabs' => $list, 'content' => $tabs_content];
   }
 
-  private function buildChart($year_month, $income = false) {
-    $connection = Database::getConnection();
+  private function buildSummaryPieChart($year_month, $income = false) {
 
-    $query = "";
-
-    if($income) {
-      $query .= "SELECT MIN(parent_term.name) AS parent_name, catdata.name AS cat_name,";
-    } else {
-      $query .= "SELECT parent_term.name AS parent_name, MIN(catdata.name) AS cat_name,";
-    }
-
-    $query .= " SUM(amount.field_amount_value) AS amount, MIN(nfd.nid) AS nid, MIN(catdata.tid) AS cat_tid, MIN(parent_term.tid) AS parent_tid
-    FROM 
-    {node_field_data} nfd
-    LEFT JOIN {node__field_category} nfc ON nfd.nid = nfc.entity_id
-    LEFT JOIN {taxonomy_term_field_data} catdata ON nfc.field_category_target_id = catdata.tid
-    LEFT JOIN {taxonomy_term__parent} h ON catdata.tid = h.entity_id
-    LEFT JOIN {taxonomy_term_field_data} parent_term ON h.parent_target_id = parent_term.tid
-    LEFT JOIN {node__field_amount} amount ON nfd.nid = amount.entity_id
-    LEFT JOIN {node__field_trans_date} transdate ON nfd.nid = transdate.entity_id 
-    WHERE ((DATE_FORMAT(transdate.field_trans_date_value, '%Y%m') = :year_date)) 
-    AND ((nfd.status = '1') 
-    AND (nfd.type IN ('line_item')) 
-    AND (amount.field_amount_value IS NOT NULL)
-    AND nfd.uid = :uid";
-
-    if($income) {
-      $query .= " AND (catdata.name IS NOT NULL)) GROUP BY cat_name";
-    } else {
-      $query .= " AND (parent_term.name IS NOT NULL)) GROUP BY parent_name";
-    }
-
-    $results = $connection->query($query, [':year_date' => $year_month, ':uid' => \Drupal::currentUser()->id()])->fetchAll();
+    $results = $this->getMonthlyStats($year_month, $income);
 
     $categories = [];
-    $seriesData = [];
     $numbers = [];
     $options = [];
     $options['title'] = '';
@@ -342,40 +311,51 @@ class Homepage extends ControllerBase {
         }
       }
     }
-    $seriesData[] = [
-      'name' => 'Series 2',
-      'color' => '#8bbc21',
-      'type' => 'pie',
-      "data" => $numbers
-    ];
 
-    $options['type'] = 'pie';
-    $options['data_labels'] = ['test'];
-    $options['yaxis_title'] = t('Y-Axis');
-    $options['yaxis_min'] = '';
-    $options['yaxis_max'] = '';
-    $options['xaxis_labels_rotation'] = 0;
-    $options['xaxis_title'] = t('X-Axis');
-    $options['three_dimensional'] = FALSE;
-    $options['title_position'] = 'out';
-    $options['legend_position'] = 'right';
-
-    // Creates a UUID for the chart ID.
-    $uuid_service = \Drupal::service('uuid');
-    $chartId = 'chart-' . $uuid_service->generate();
-
-    return  [
-      '#theme' => 'charts_api_example',
-      '#library' => 'highcharts',
-      '#categories' => $categories,
-      '#seriesData' => $seriesData,
-      '#options' => $options,
-      '#id' => $chartId,
-    ];
-
+    return $this->buildChart($categories, $numbers, 'Series 2');
   }
 
-  private function categoryChart($categories = [], $numbers = [], $series_name = '') {
+
+  //this needs caching
+  private function getMonthlyStats($year_month, $income = false) {
+    $connection = Database::getConnection();
+
+    $query = "";
+
+    if($income) {
+      $query .= "SELECT MIN(parent_term.name) AS parent_name, catdata.name AS cat_name,";
+    } else {
+      $query .= "SELECT parent_term.name AS parent_name,";
+    }
+
+    $query .= " SUM(amount.field_amount_value) AS amount, 
+    MIN(nfd.nid) AS nid, 
+    MIN(catdata.tid) AS cat_tid, 
+    MIN(parent_term.tid) AS parent_tid
+    FROM 
+    {node_field_data} nfd
+    LEFT JOIN {node__field_category} nfc ON nfd.nid = nfc.entity_id
+    LEFT JOIN {taxonomy_term_field_data} catdata ON nfc.field_category_target_id = catdata.tid
+    LEFT JOIN {taxonomy_term__parent} h ON catdata.tid = h.entity_id
+    LEFT JOIN {taxonomy_term_field_data} parent_term ON h.parent_target_id = parent_term.tid
+    LEFT JOIN {node__field_amount} amount ON nfd.nid = amount.entity_id
+    LEFT JOIN {node__field_trans_date} transdate ON nfd.nid = transdate.entity_id 
+    WHERE ((DATE_FORMAT(transdate.field_trans_date_value, '%Y%m') = :year_date)) 
+    AND ((nfd.status = '1') 
+    AND (nfd.type IN ('line_item')) 
+    AND (amount.field_amount_value IS NOT NULL)
+    AND nfd.uid = :uid";
+
+    if($income) {
+      $query .= " AND (catdata.name IS NOT NULL)) GROUP BY cat_name";
+    } else {
+      $query .= " AND (parent_term.name IS NOT NULL)) GROUP BY parent_name";
+    }
+
+    return $connection->query($query, [':year_date' => $year_month, ':uid' => \Drupal::currentUser()->id()])->fetchAll();
+  }
+
+  private function buildChart($categories = [], $numbers = [], $series_name = '', $chart_type = 'pie') {
     $seriesData = [];
     $options = [];
     $options['title'] = '';
@@ -383,11 +363,11 @@ class Homepage extends ControllerBase {
     $seriesData[] = [
       'name' => $series_name,
       'color' => '#8bbc21',
-      'type' => 'pie',
+      'type' => $chart_type,
       "data" => $numbers,
     ];
 
-    $options['type'] = 'pie';
+    $options['type'] = $chart_type;
     $options['data_labels'] = ['test'];
     $options['yaxis_title'] = t('Y-Axis');
     $options['yaxis_min'] = '';
