@@ -285,32 +285,7 @@ class Homepage extends ControllerBase {
 
   private function buildSummaryPieChart($year_month, $income = false) {
 
-    $results = $this->getMonthlyStats($year_month, $income);
-
-    $categories = [];
-    $numbers = [];
-    $options = [];
-    $options['title'] = '';
-
-    foreach ($results as $key => $result) {
-      if($result->amount && isset($result->parent_name)) {
-        if($result->parent_name != 'Income' && !$income) {
-          $options['title'] = 'Spending';
-          $categories[] = $result->parent_name;
-          $numbers[] = [
-            'name' => $result->parent_name,
-            'y' => (int) $result->amount
-          ];
-        } else if($result->parent_name == 'Income' && $income) {
-          $options['title'] = 'Income';
-          $categories[] = $result->cat_name;
-          $numbers[] = [
-            'name' => $result->cat_name,
-            'y' => (int) $result->amount
-          ];
-        }
-      }
-    }
+    list($categories, $numbers) = $this->getMonthlyStats($year_month, $income);
 
     return $this->buildChart($categories, $numbers, 'Series 2');
   }
@@ -352,7 +327,34 @@ class Homepage extends ControllerBase {
       $query .= " AND (parent_term.name IS NOT NULL)) GROUP BY parent_name";
     }
 
-    return $connection->query($query, [':year_date' => $year_month, ':uid' => \Drupal::currentUser()->id()])->fetchAll();
+    $results = $connection->query($query, [':year_date' => $year_month, ':uid' => \Drupal::currentUser()->id()])->fetchAll();
+
+    $categories = [];
+    $numbers = [];
+    $options = [];
+    $options['title'] = '';
+
+    foreach ($results as $key => $result) {
+      if($result->amount && isset($result->parent_name)) {
+        if($result->parent_name != 'Income' && !$income) {
+          $options['title'] = 'Spending';
+          $categories[] = $result->parent_name;
+          $numbers[] = [
+            'name' => $result->parent_name,
+            'y' => (int) $result->amount
+          ];
+        } else if($result->parent_name == 'Income' && $income) {
+          $options['title'] = 'Income';
+          $categories[] = $result->cat_name;
+          $numbers[] = [
+            'name' => $result->cat_name,
+            'y' => (int) $result->amount
+          ];
+        }
+      }
+    }
+
+    return [$categories, $numbers];
   }
 
   private function buildChart($categories = [], $numbers = [], $series_name = '', $chart_type = 'pie') {
