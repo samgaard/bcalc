@@ -12,7 +12,7 @@ bcalc.homepage_build:
   path: '/home'
   defaults:
     _controller: '\Drupal\bcalc\Controller\Homepage::home'
-    _title: 'Monthly Summaries'
+    _title: ''
   requirements:
     _permission: 'access content'
 
