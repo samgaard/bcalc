@@ -7,7 +7,7 @@
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\charts\Charts\ModuleSelector;
+use Drupal\node\NodeInterface;
 
 /**
  * Implements hook_help().
@@ -34,7 +34,11 @@ function bcalc_theme() {
       'render element' => 'children',
     ],
     'homepage' => [
-      'variables' => ['tabs' => NULL, 'tabscontent' => NULL],
+      'variables' => [
+        'tabs' => NULL,
+        'tabscontent' => NULL,
+        'yearly_summary_chart' => NULL,
+      ],
     ],
   ];
 }
@@ -43,11 +47,11 @@ function bcalc_theme() {
  * Implements hook_form_alter().
  */
 function bcalc_form_alter(&$form, FormStateInterface $form_state) {
-  if($form['#form_id'] == 'taxonomy_term_category_form') {
+  if ($form['#form_id'] == 'taxonomy_term_category_form') {
     #$form['relations']['parent']['#multiple'] = false;
-    $form['relations']['parent']['#attributes'] = ['style' => 'height: 400px;'];    
-    $form['relations']['#open'] = true;
-    $form['relations']['weight']['#access'] = false;
+    $form['relations']['parent']['#attributes'] = ['style' => 'height: 400px;'];
+    $form['relations']['#open'] = TRUE;
+    $form['relations']['weight']['#access'] = FALSE;
   }
 }
 
@@ -57,5 +61,31 @@ function bcalc_form_alter(&$form, FormStateInterface $form_state) {
  * @param $variables
  */
 function bcalc_preprocess_charts_api_example(&$variables) {
-  $moduleSelector = new ModuleSelector($variables['library'], $variables['categories'], $variables['seriesData'], $variables['options'], [], $variables, 'xyz' . rand());
+  $plugin_manager = \Drupal::service('plugin.manager.charts');
+  $plugin = $plugin_manager->createInstance($variables['library']);
+  $plugin->buildVariables($variables['options'], $variables['categories'], $variables['seriesData'], [], $variables, $variables['id']);
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function bcalc_node_update(NodeInterface $node) {
+  if ($node->getType() == 'line_item') {
+    //delete cached data for that month
+    $yearmonth = substr($node->get('field_trans_date')->value, 0, 7);
+    $cid = 'monthlystats.' . str_replace('-', '', $yearmonth);
+    \Drupal::cache()->delete($cid);
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function bcalc_node_insert(NodeInterface $node) {
+  if ($node->getType() == 'line_item') {
+    //delete cached data for that month
+    $yearmonth = substr($node->get('field_trans_date')->value, 0, 7);
+    $cid = 'monthlystats.' . str_replace('-', '', $yearmonth);
+    \Drupal::cache()->delete($cid);
+  }
 }
