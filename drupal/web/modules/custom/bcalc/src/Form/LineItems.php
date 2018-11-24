@@ -48,7 +48,7 @@ class LineItems extends FormBase {
       'Amount',
       'Category',
       'Edit',
-      'Delete'
+      'Delete',
     ];
 
     $form['line_items_table'] = [
@@ -62,11 +62,12 @@ class LineItems extends FormBase {
     $options = [''];
     foreach ($terms as $parent) {
       foreach ($parent->children as $child) {
-        if(isset($child->children) && count($child->children)) {
+        if (isset($child->children) && count($child->children)) {
           foreach ($child->children as $baby_child) {
             $options[$parent->name][$baby_child->tid] = $baby_child->name;
           }
-        } else {
+        }
+        else {
           $options[$parent->name][$child->tid] = $child->name;
         }
       }
@@ -76,7 +77,7 @@ class LineItems extends FormBase {
       ->condition('type', 'line_item')
       ->condition('field_trans_date', [
         $beginning_of_month,
-        $end_of_month
+        $end_of_month,
       ], 'BETWEEN')
       ->condition('uid', \Drupal::currentUser()->id())
       ->sort('field_trans_date')
@@ -92,20 +93,20 @@ class LineItems extends FormBase {
 
       $form['line_items_table'][$node_id]['date'] = [
         '#type' => 'markup',
-        '#markup' => $node->get('field_trans_date')->value
+        '#markup' => $node->get('field_trans_date')->value,
       ];
       $form['line_items_table'][$node_id]['type'] = [
         '#type' => 'markup',
-        '#markup' => ($trns_id ? Term::load($trns_id)->getName() : '')
+        '#markup' => ($trns_id ? Term::load($trns_id)->getName() : ''),
       ];
       $form['line_items_table'][$node_id]['source'] = [
         '#type' => 'markup',
         '#markup' => ($src_id ? Term::load($src_id)
-          ->getName() : $node->get('title')->getString())
+          ->getName() : $node->get('title')->getString()),
       ];
       $form['line_items_table'][$node_id]['amount'] = [
         '#type' => 'markup',
-        '#markup' => '$' . $node->get('field_amount')->value
+        '#markup' => '$' . $node->get('field_amount')->value,
       ];
       $form['line_items_table'][$node_id]['category'] = [
         '#type' => 'select',
@@ -114,7 +115,10 @@ class LineItems extends FormBase {
       ];
       $form['line_items_table'][$node_id]['edit'] = [
         '#type' => 'markup',
-        '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', ['node' => $node_id, 'destination' => '/bcalc/line-items/edit/' . $year_month], ['attributes' => ['target' => '_blank']])
+        '#markup' => Link::createFromRoute('Edit', 'entity.node.edit_form', [
+          'node' => $node_id,
+          'destination' => '/bcalc/line-items/edit/' . $year_month,
+        ], ['attributes' => ['target' => '_blank']])
           ->toString(),
       ];
       $form['line_items_table'][$node_id]['delete'] = [
@@ -158,7 +162,7 @@ class LineItems extends FormBase {
 
       $current_category = $node->get('field_category')->target_id;
 
-      if($value['delete']['data'] > 0 || $current_category != $value['category']) {
+      if ($value['delete']['data'] > 0 || $current_category != $value['category']) {
 
         $source_id = $node->get('field_source')->target_id;
         if ($source_id > 0) {
@@ -186,6 +190,9 @@ class LineItems extends FormBase {
           if ($value['category'] > 0) {
             $term = Term::load($value['category']);
           }
+          if ($current_category == 0) {
+            $log_message = "Added category {$term->label()} TO \"{$source_name} ({$node->id()})\".";
+          }
           if ($current_category > 0) {
             $old_term = Term::load($current_category);
             if ($value['category'] == 0) {
@@ -194,9 +201,6 @@ class LineItems extends FormBase {
             else {
               $log_message = "Changed \"{$source_name} ({$node->id()})\" FROM {$old_term->label()} TO {$term->label()}.";
             }
-          }
-          else {
-            $log_message = "Added category {$term->label()} TO \"{$source_name} ({$node->id()})\".";
           }
           \Drupal::messenger()->addMessage($log_message);
           $dblog_message .= $log_message . '<br />';
