@@ -25,13 +25,16 @@ class Homepage extends ControllerBase {
 
     $tabs_content = $this->buildHomepageTabs();
 
+    $yearly_summary = $this->buildYearlySummary();
+
     return [
       '#theme' => 'homepage',
       '#tabs' => $tabs_content['tabs'],
       '#tabscontent' => $tabs_content['content'],
+      '#yearly_summary_chart' => $yearly_summary,
       '#cache' => [
         'max-age' => 0,
-      ]
+      ],
     ];
   }
 
@@ -56,7 +59,7 @@ class Homepage extends ControllerBase {
         ->condition('type', 'line_item')
         ->condition('field_trans_date', [
           $beginning_of_month,
-          $end_of_month
+          $end_of_month,
         ], 'BETWEEN')
         ->condition('uid', \Drupal::currentUser()->id())
         ->execute();
@@ -78,7 +81,7 @@ class Homepage extends ControllerBase {
         $line_items['xtra']['uncategorized'] = 0;
 
         //GROUP BY CATEGORY
-        foreach($nodes as $node) {
+        foreach ($nodes as $node) {
 
           $amount = $node->get('field_amount')->value;
 
@@ -95,33 +98,37 @@ class Homepage extends ControllerBase {
 
             //RECORD SEPARATE INCOME DETAILS
             $income = FALSE;
-            if(!empty($parent_term) && $parent_term->label() == "Income") {
+            if (!empty($parent_term) && $parent_term->label() == "Income") {
               $income = TRUE;
-              if($category_term->label() == "From Savings") {
+              if ($category_term->label() == "From Savings") {
                 $line_items['xtra']['from_savings'] += $amount;
               }
-              if($category_term->label() == "Trust") {
+              if ($category_term->label() == "Trust") {
                 $line_items['xtra']['from_trust'] += $amount;
               }
-              if(in_array($category_term->label(), ['Emily Income', 'Sam Income', 'Other'])) {
+              if (in_array($category_term->label(), [
+                'Emily Income',
+                'Sam Income',
+                'Other',
+              ])) {
                 $line_items['xtra']['paychecks'] += $amount;
               }
             }
 
             //DEFAULT ARRAY KEYS. USE PARENT NAME AS KEY FOR SORTING
-            if(!isset($line_items[$parent_term->label()])) {
+            if (!isset($line_items[$parent_term->label()])) {
               $line_items[$parent_term->label()] = ['sum' => 0];
             }
-            if(!isset($line_items[$parent_term->label()][$cid])) {
+            if (!isset($line_items[$parent_term->label()][$cid])) {
               $line_items[$parent_term->label()][$cid] = ['sum' => 0];
             }
-            if(!isset($line_items[$parent_term->label()][$cid]['title'])) {
+            if (!isset($line_items[$parent_term->label()][$cid]['title'])) {
               $line_items[$parent_term->label()][$cid]['title'] = $category_term->label();
             }
-            if(!isset($line_items[$parent_term->label()]['title'])) {
+            if (!isset($line_items[$parent_term->label()]['title'])) {
               $line_items[$parent_term->label()]['title'] = $parent_term->label();
             }
-            if(!isset($line_items[$parent_term->label()][$cid]['title'])) {
+            if (!isset($line_items[$parent_term->label()][$cid]['title'])) {
               $line_items[$parent_term->label()][$cid]['title'] = $category_term->label();
             }
 
@@ -132,9 +139,10 @@ class Homepage extends ControllerBase {
             $line_items[$parent_term->label()][$cid]['sum'] += $amount;
 
             //MONTH TOTALS
-            if($income) {
+            if ($income) {
               $line_items['xtra']['total_in'] += $amount;
-            } else {
+            }
+            else {
               $line_items['xtra']['total_out'] += $amount;
             }
           }
@@ -155,7 +163,7 @@ class Homepage extends ControllerBase {
         $content = '';
         foreach ($line_items as $parent_key => $parents) {
           $rows = [];
-          if($parent_key != 'xtra') {
+          if ($parent_key != 'xtra') {
             $cat_title = '';
             $cat_sum = 0;
             $chart = '';
@@ -179,8 +187,8 @@ class Homepage extends ControllerBase {
                       ],
                       [
                         'data' => $parents[$cat_key]['sum'],
-                        'class' => 'text-right'
-                      ]
+                        'class' => 'text-right',
+                      ],
                     ];
 
                     //DATA FOR CHART
@@ -195,7 +203,7 @@ class Homepage extends ControllerBase {
             }
 
             //APPEND PERCENT NEXT TO PARENT NAME
-            if($cat_title != 'Income') {
+            if ($cat_title != 'Income') {
               $cat_title .= ' ' . number_format((($cat_sum / $month_total_amount) * 100)) . '%';
             }
 
@@ -208,26 +216,26 @@ class Homepage extends ControllerBase {
                   'class' => 'text-right',
                 ],
               ],
-              'class' => 'total-row'
+              'class' => 'total-row',
             ];
 
             //THEME TABLE
             $table = [
               '#theme' => 'table',
               '#rows' => $rows,
-              '#header' => []
+              '#header' => [],
             ];
 
             //CHART
             if (!empty($numbers) && count($categories) > 1) {
-              $chart = $this->buildChart($categories, $numbers,'Series ' . $parent_key);
+              $chart = $this->buildChart($categories, $numbers, 'Series ' . $parent_key);
             }
 
             //ADD TO TABLES ARRAY WITH CATEGORY TITLE
             $tables[] = [
               'title' => $cat_title,
               'table' => $table,
-              'chart' => $chart
+              'chart' => $chart,
             ];
           }
         }
@@ -237,7 +245,7 @@ class Homepage extends ControllerBase {
 
 
         $build_chart = $this->buildSummaryPieChart('2018' . $month);
-        $build_chart2 = $this->buildSummaryPieChart('2018' . $month, true);
+        $build_chart2 = $this->buildSummaryPieChart('2018' . $month, TRUE);
 
         $tabs_content[] = [
           'active' => $active,
@@ -251,7 +259,7 @@ class Homepage extends ControllerBase {
           'total_out' => $month_total_amount,
           'edit_arg' => '2018-' . $dateObj->format('m'),
           'chart' => $build_chart,
-          'chart2' => $build_chart2
+          'chart2' => $build_chart2,
         ];
 
         $url = Url::fromUserInput('#' . strtolower($monthName), ['attributes' => ['data-toggle' => 'tab']]);
@@ -260,7 +268,7 @@ class Homepage extends ControllerBase {
         if ($active) {
           $items[] = [
             '#markup' => $link,
-            '#wrapper_attributes' => ['class' => 'active']
+            '#wrapper_attributes' => ['class' => 'active'],
           ];
         }
         else {
@@ -277,29 +285,101 @@ class Homepage extends ControllerBase {
       '#theme' => 'item_list',
       '#items' => $items,
       '#attributes' => [
-        'class' => 'nav nav-tabs'
-      ]
+        'class' => 'nav nav-tabs',
+      ],
     ];
     return ['tabs' => $list, 'content' => $tabs_content];
   }
 
-  private function buildSummaryPieChart($year_month, $income = false) {
+  private function buildSummaryPieChart($year_month, $income = FALSE) {
 
     list($categories, $numbers) = $this->getMonthlyStats($year_month, $income);
 
-    return $this->buildChart($categories, $numbers, 'Series 2');
+    return $this->buildChart($categories, $numbers, 'Series ' . $year_month);
   }
 
+  private function buildYearlySummary() {
+
+    $seriesData = [];
+    $options = [];
+    $categories = [];
+
+    $tt = \Drupal::service('taxonomy_tree.taxonomy_term_tree');
+    $terms = $tt->load('category');
+    foreach ($terms as $parent) {
+      $seriesData[$parent->name] = ['name' => $parent->name];
+    }
+
+    //month names and data
+    for ($i = 1; $i < 13; $i++) {
+      $categories[] = date("F", mktime(NULL, NULL, NULL, $i, 1));
+      $monthlyStats = $this->getMonthlyStats(date('Y') . sprintf("%02d", $i));
+      if (count($monthlyStats[1])) {
+        $month_catdata = [];
+        foreach ($monthlyStats[1] as $cat) {
+          $month_catdata[$cat['name']]['total'] = $cat['y'];
+        }
+        foreach ($seriesData as $catname => $value) {
+          $total = in_array($catname, $monthlyStats[0]) ? $month_catdata[$catname]['total'] : 0;
+          $seriesData[$catname]['data'][] = $total;
+        }
+      }
+      else {
+        foreach ($seriesData as $key => $value) {
+          $seriesData[$key]['data'][] = 0;
+        }
+      }
+    }
+
+    //filter out series data with all zeros?
+
+    $serieses = [];
+    foreach ($seriesData as $val) {
+      $serieses[] = $val;
+    }
+
+    $options['type'] = 'line';
+    $options['data_labels'] = ['test'];
+    $options['yaxis_title'] = t('Y-Axis');
+    $options['yaxis_min'] = '';
+    $options['data_markers'] = '';
+    $options['yaxis_max'] = '';
+    $options['xaxis_labels_rotation'] = 0;
+    $options['xaxis_title'] = t('X-Axis');
+    $options['three_dimensional'] = FALSE;
+    $options['title_position'] = 'out';
+    $options['legend_position'] = 'right';
+
+    // Creates a UUID for the chart ID.
+    $uuid_service = \Drupal::service('uuid');
+    $chartId = 'chart-' . $uuid_service->generate();
+
+    return [
+      '#theme' => 'charts_api_example',
+      '#library' => 'highcharts',
+      '#categories' => $categories,
+      '#seriesData' => $serieses,
+      '#options' => $options,
+      '#id' => $chartId,
+    ];
+  }
 
   //this needs caching
-  private function getMonthlyStats($year_month, $income = false) {
+  private function getMonthlyStats($year_month, $income = FALSE) {
+
+    $monthly_stats = \Drupal::cache()->get('monthlystats.' . $year_month);
+    if (!empty($monthly_stats)) {
+       return $monthly_stats->data;
+    }
+
     $connection = Database::getConnection();
 
     $query = "";
 
-    if($income) {
+    if ($income) {
       $query .= "SELECT MIN(parent_term.name) AS parent_name, catdata.name AS cat_name,";
-    } else {
+    }
+    else {
       $query .= "SELECT parent_term.name AS parent_name,";
     }
 
@@ -321,13 +401,17 @@ class Homepage extends ControllerBase {
     AND (amount.field_amount_value IS NOT NULL)
     AND nfd.uid = :uid";
 
-    if($income) {
+    if ($income) {
       $query .= " AND (catdata.name IS NOT NULL)) GROUP BY cat_name";
-    } else {
+    }
+    else {
       $query .= " AND (parent_term.name IS NOT NULL)) GROUP BY parent_name";
     }
 
-    $results = $connection->query($query, [':year_date' => $year_month, ':uid' => \Drupal::currentUser()->id()])->fetchAll();
+    $results = $connection->query($query, [
+      ':year_date' => $year_month,
+      ':uid' => \Drupal::currentUser()->id(),
+    ])->fetchAll();
 
     $categories = [];
     $numbers = [];
@@ -335,26 +419,34 @@ class Homepage extends ControllerBase {
     $options['title'] = '';
 
     foreach ($results as $key => $result) {
-      if($result->amount && isset($result->parent_name)) {
-        if($result->parent_name != 'Income' && !$income) {
+      if ($result->amount && isset($result->parent_name)) {
+        if ($result->parent_name != 'Income' && !$income) {
           $options['title'] = 'Spending';
           $categories[] = $result->parent_name;
           $numbers[] = [
             'name' => $result->parent_name,
-            'y' => (int) $result->amount
+            'y' => (int) $result->amount,
           ];
-        } else if($result->parent_name == 'Income' && $income) {
-          $options['title'] = 'Income';
-          $categories[] = $result->cat_name;
-          $numbers[] = [
-            'name' => $result->cat_name,
-            'y' => (int) $result->amount
-          ];
+        }
+        else {
+          if ($result->parent_name == 'Income' && $income) {
+            $options['title'] = 'Income';
+            $categories[] = $result->cat_name;
+            $numbers[] = [
+              'name' => $result->cat_name,
+              'y' => (int) $result->amount,
+            ];
+          }
         }
       }
     }
 
-    return [$categories, $numbers];
+    $cat_nums = [$categories, $numbers];
+
+    //cache results
+    \Drupal::cache()->set('monthlystats.' . $year_month, $cat_nums);
+
+    return $cat_nums;
   }
 
   private function buildChart($categories = [], $numbers = [], $series_name = '', $chart_type = 'pie') {
