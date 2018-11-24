@@ -7388,3 +7388,10 @@ p:last-child,
 .edit-line-items {
   margin-top: 15px;
 }
+.tab-pane .total-row td {
+  border-top: 2px solid;
+}
+.row.cat-row {
+  box-shadow: 0 0 10px #ccc;
+  margin-top: 30px;
+}
