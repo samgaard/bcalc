@@ -251,8 +251,8 @@ class Homepage extends ControllerBase {
         $monthName = $dateObj->format('F');
 
 
-        $build_chart = $this->buildSummaryPieChart('2018' . $month);
-        $build_chart2 = $this->buildSummaryPieChart('2018' . $month, TRUE);
+        $build_chart = $this->buildSummaryPieChart($year . $month);
+        $build_chart2 = $this->buildSummaryPieChart($year . $month, TRUE);
 
         $tabs_content[] = [
           'active' => $active,
@@ -264,7 +264,7 @@ class Homepage extends ControllerBase {
           'paychecks' => $line_items['xtra']['paychecks'],
           'total_in' => $line_items['xtra']['total_in'],
           'total_out' => $month_total_amount,
-          'edit_arg' => '2018-' . $dateObj->format('m'),
+          'edit_arg' => $year . '-' . $dateObj->format('m'),
           'chart' => $build_chart,
           'chart2' => $build_chart2,
         ];
@@ -401,6 +401,19 @@ class Homepage extends ControllerBase {
     //month names and data
     for ($i = 1; $i < 13; $i++) {
       $categories[] = date("F", mktime(NULL, NULL, NULL, $i, 1));
+
+      //INCOME
+      $monthlyIncomeStats = $this->getMonthlyStats($year . sprintf("%02d", $i), TRUE);
+      $incomeTotal = 0;
+      if (count($monthlyIncomeStats[1])) {
+        $incomeTotal = 0;
+        foreach ($monthlyIncomeStats[1] as $cat) {
+          $incomeTotal += $cat['y'];
+        }
+      }
+      $seriesData['Income']['data'][] = $incomeTotal;
+
+      //SPENDING
       $monthlyStats = $this->getMonthlyStats($year . sprintf("%02d", $i));
       if (count($monthlyStats[1])) {
         $month_catdata = [];
@@ -408,13 +421,17 @@ class Homepage extends ControllerBase {
           $month_catdata[$cat['name']]['total'] = $cat['y'];
         }
         foreach ($seriesData as $catname => $value) {
-          $total = in_array($catname, $monthlyStats[0]) ? $month_catdata[$catname]['total'] : 0;
-          $seriesData[$catname]['data'][] = $total;
+          if ($catname != 'Income') {
+            $total = in_array($catname, $monthlyStats[0]) ? $month_catdata[$catname]['total'] : 0;
+            $seriesData[$catname]['data'][] = $total;
+          }
         }
       }
       else {
         foreach ($seriesData as $key => $value) {
-          $seriesData[$key]['data'][] = 0;
+          if ($key != 'Income') {
+            $seriesData[$key]['data'][] = 0;
+          }
         }
       }
     }
