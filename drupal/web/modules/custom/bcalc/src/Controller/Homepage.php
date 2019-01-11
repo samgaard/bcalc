@@ -23,22 +23,30 @@ class Homepage extends ControllerBase {
    */
   public function home() {
 
-    $tabs_content = $this->buildHomepageTabs();
+    $year = isset($_REQUEST['year']) && is_numeric($_REQUEST['year']) ? $_REQUEST['year'] : date('Y');
 
-    $yearly_summary = $this->buildYearlySummary();
+    $tabs_content = $this->buildHomepageTabs($year);
+
+    $yearly_summary_chart = $this->buildYearlySummaryChart($year);
+
+    $yearly_summary_averages = $this->buildYearlySummaryAverages($year);
 
     return [
       '#theme' => 'homepage',
       '#tabs' => $tabs_content['tabs'],
       '#tabscontent' => $tabs_content['content'],
-      '#yearly_summary_chart' => $yearly_summary,
+      '#yearly_summary_chart' => $yearly_summary_chart,
+      '#yearly_summary_averages' => $yearly_summary_averages,
       '#cache' => [
         'max-age' => 0,
       ],
     ];
   }
 
-  private function buildHomepageTabs() {
+  private function buildHomepageTabs($year = NULL) {
+    if (!$year) {
+      $year = date('Y');
+    }
 
     $items = [];
     $tabs_content = [];
@@ -49,7 +57,6 @@ class Homepage extends ControllerBase {
 
       //FORMAT BEGINNING AND END OF MONTH
       $month = str_pad($i, 2, '0', STR_PAD_LEFT);
-      $year = date('Y');
       $year_month = $year . '-' . $month;
       $beginning_of_month = $year_month . '-01';
       $end_of_month = $year_month . '-' . cal_days_in_month(CAL_GREGORIAN, $month, $year);
@@ -298,45 +305,12 @@ class Homepage extends ControllerBase {
     return $this->buildChart($categories, $numbers, 'Series ' . $year_month);
   }
 
-  private function buildYearlySummary() {
+  private function buildYearlySummaryChart($year = NULL) {
 
-    $seriesData = [];
+    // lookup stats
+    list($serieses, $categories) = $this->getYearlyStats($year);
+
     $options = [];
-    $categories = [];
-
-    $tt = \Drupal::service('taxonomy_tree.taxonomy_term_tree');
-    $terms = $tt->load('category');
-    foreach ($terms as $parent) {
-      $seriesData[$parent->name] = ['name' => $parent->name];
-    }
-
-    //month names and data
-    for ($i = 1; $i < 13; $i++) {
-      $categories[] = date("F", mktime(NULL, NULL, NULL, $i, 1));
-      $monthlyStats = $this->getMonthlyStats(date('Y') . sprintf("%02d", $i));
-      if (count($monthlyStats[1])) {
-        $month_catdata = [];
-        foreach ($monthlyStats[1] as $cat) {
-          $month_catdata[$cat['name']]['total'] = $cat['y'];
-        }
-        foreach ($seriesData as $catname => $value) {
-          $total = in_array($catname, $monthlyStats[0]) ? $month_catdata[$catname]['total'] : 0;
-          $seriesData[$catname]['data'][] = $total;
-        }
-      }
-      else {
-        foreach ($seriesData as $key => $value) {
-          $seriesData[$key]['data'][] = 0;
-        }
-      }
-    }
-
-    //filter out series data with all zeros?
-
-    $serieses = [];
-    foreach ($seriesData as $val) {
-      $serieses[] = $val;
-    }
 
     $options['type'] = 'line';
     $options['data_labels'] = ['test'];
@@ -364,12 +338,110 @@ class Homepage extends ControllerBase {
     ];
   }
 
-  //this needs caching
+  private function buildYearlySummaryAverages($year = NULL) {
+    if (!$year) {
+      $year = date('Y');
+    }
+
+    list($serieses, $categories) = $this->getYearlyStats($year);
+
+    $rows = [];
+
+    foreach ($serieses as $series) {
+      $row = [];
+
+      $row[] = $series['name'];
+
+      $total = 0;
+      foreach ($series['data'] as $month_total) {
+        $total += $month_total;
+      }
+      $row[] = $total;
+
+      $row[] = number_format($total / 12, 2);
+
+      if ($total) {
+        $rows[] = $row;
+      }
+    }
+
+    $header = ['Name', 'Total', 'Average'];
+
+    $list = [
+      '#type' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+    ];
+    return $list;
+
+  }
+
+  //TODO needs caching
+  private function getYearlyStats($year = NULL) {
+    if (!$year) {
+      $year = date('Y');
+    }
+
+    $cache_id = 'yearlystats.' . $year . \Drupal::currentUser()->id();
+
+    $yearly_stats = \Drupal::cache()->get($cache_id);
+    if (!empty($yearly_stats)) {
+      return $yearly_stats->data;
+    }
+
+    $seriesData = [];
+    $categories = [];
+
+    $tt = \Drupal::service('taxonomy_tree.taxonomy_term_tree');
+    $terms = $tt->load('category');
+    foreach ($terms as $parent) {
+      $seriesData[$parent->name] = ['name' => $parent->name];
+    }
+
+    //month names and data
+    for ($i = 1; $i < 13; $i++) {
+      $categories[] = date("F", mktime(NULL, NULL, NULL, $i, 1));
+      $monthlyStats = $this->getMonthlyStats($year . sprintf("%02d", $i));
+      if (count($monthlyStats[1])) {
+        $month_catdata = [];
+        foreach ($monthlyStats[1] as $cat) {
+          $month_catdata[$cat['name']]['total'] = $cat['y'];
+        }
+        foreach ($seriesData as $catname => $value) {
+          $total = in_array($catname, $monthlyStats[0]) ? $month_catdata[$catname]['total'] : 0;
+          $seriesData[$catname]['data'][] = $total;
+        }
+      }
+      else {
+        foreach ($seriesData as $key => $value) {
+          $seriesData[$key]['data'][] = 0;
+        }
+      }
+    }
+
+    //filter out series data with all zeros?
+
+    $serieses = [];
+    foreach ($seriesData as $val) {
+      $serieses[] = $val;
+    }
+
+    $year_nums = [$serieses, $categories];
+
+    //cache results
+    \Drupal::cache()->set($cache_id, $year_nums);
+
+    return $year_nums;
+  }
+
+
   private function getMonthlyStats($year_month, $income = FALSE) {
 
-    $monthly_stats = \Drupal::cache()->get('monthlystats.' . $year_month);
+    $cache_id = 'monthlystats.' . $year_month . \Drupal::currentUser()->id();
+
+    $monthly_stats = \Drupal::cache()->get($cache_id);
     if (!empty($monthly_stats)) {
-       return $monthly_stats->data;
+      return $monthly_stats->data;
     }
 
     $connection = Database::getConnection();
@@ -444,7 +516,7 @@ class Homepage extends ControllerBase {
     $cat_nums = [$categories, $numbers];
 
     //cache results
-    \Drupal::cache()->set('monthlystats.' . $year_month, $cat_nums);
+    \Drupal::cache()->set($cache_id, $cat_nums);
 
     return $cat_nums;
   }

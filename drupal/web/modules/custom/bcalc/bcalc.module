@@ -38,6 +38,7 @@ function bcalc_theme() {
         'tabs' => NULL,
         'tabscontent' => NULL,
         'yearly_summary_chart' => NULL,
+        'yearly_summary_averages' => NULL,
       ],
     ],
   ];

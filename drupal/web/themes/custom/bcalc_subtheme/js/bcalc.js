@@ -43,6 +43,21 @@
                     $(this).highcharts(hc);
                 }
             });
+            var year = 0;
+            var dateChanger = $('#date-changer');
+            if (year = get('year')) {
+                dateChanger.val(year);
+            }
+            dateChanger.on('change', function () {
+                window.location = '?year=' + $(this).val();
+            })
+
         }
     };
+
+    function get(name) {
+        if (name = (new RegExp('[?&]' + encodeURIComponent(name) + '=([^&]*)')).exec(location.search))
+            return decodeURIComponent(name[1]);
+    }
+
 }(jQuery));

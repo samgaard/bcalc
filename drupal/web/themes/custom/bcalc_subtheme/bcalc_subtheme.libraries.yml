@@ -2,6 +2,7 @@ global-styling:
   css:
     theme:
       css/style.css: {}
+      css/bootstrap-select.css: {}
 
 bootstrap-scripts:
   js:
@@ -18,3 +19,4 @@ bootstrap-scripts:
     bootstrap/js/tab.js: {}
     bootstrap/js/transition.js: {}
     js/bcalc.js: {}
+    js/bootstrap-select.js: {}
