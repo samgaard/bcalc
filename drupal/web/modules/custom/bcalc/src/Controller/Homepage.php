@@ -308,7 +308,7 @@ class Homepage extends ControllerBase {
   private function buildYearlySummaryChart($year = NULL) {
 
     // lookup stats
-    list($serieses, $categories) = $this->getYearlyStats($year);
+    list($serieses, $categories, $active_months) = $this->getYearlyStats($year);
 
     $options = [];
 
@@ -343,7 +343,7 @@ class Homepage extends ControllerBase {
       $year = date('Y');
     }
 
-    list($serieses, $categories) = $this->getYearlyStats($year);
+    list($serieses, $categories, $active_months) = $this->getYearlyStats($year);
 
     $rows = [];
 
@@ -358,14 +358,14 @@ class Homepage extends ControllerBase {
       }
       $row[] = $total;
 
-      $row[] = number_format($total / 12, 2);
+      $row[] = number_format($total / $active_months, 2);
 
       if ($total) {
         $rows[] = $row;
       }
     }
 
-    $header = ['Name', 'Total', 'Average'];
+    $header = ['Name', 'Total', 'Average (' . $active_months . ' months)'];
 
     $list = [
       '#type' => 'table',
@@ -376,7 +376,6 @@ class Homepage extends ControllerBase {
 
   }
 
-  //TODO needs caching
   private function getYearlyStats($year = NULL) {
     if (!$year) {
       $year = date('Y');
@@ -398,9 +397,11 @@ class Homepage extends ControllerBase {
       $seriesData[$parent->name] = ['name' => $parent->name];
     }
 
+    $active_months = 0;
+
     //month names and data
     for ($i = 1; $i < 13; $i++) {
-      $categories[] = date("F", mktime(NULL, NULL, NULL, $i, 1));
+      $found_data = FALSE;
 
       //INCOME
       $monthlyIncomeStats = $this->getMonthlyStats($year . sprintf("%02d", $i), TRUE);
@@ -411,7 +412,10 @@ class Homepage extends ControllerBase {
           $incomeTotal += $cat['y'];
         }
       }
-      $seriesData['Income']['data'][] = $incomeTotal;
+      if ($incomeTotal) {
+        $seriesData['Income']['data'][] = $incomeTotal;
+        $found_data = TRUE;
+      }
 
       //SPENDING
       $monthlyStats = $this->getMonthlyStats($year . sprintf("%02d", $i));
@@ -424,16 +428,16 @@ class Homepage extends ControllerBase {
           if ($catname != 'Income') {
             $total = in_array($catname, $monthlyStats[0]) ? $month_catdata[$catname]['total'] : 0;
             $seriesData[$catname]['data'][] = $total;
+            $found_data = TRUE;
           }
         }
       }
-      else {
-        foreach ($seriesData as $key => $value) {
-          if ($key != 'Income') {
-            $seriesData[$key]['data'][] = 0;
-          }
-        }
+
+      if ($found_data) {
+        $categories[] = date("F", mktime(NULL, NULL, NULL, $i, 1));
+        $active_months++;
       }
+
     }
 
     //filter out series data with all zeros?
@@ -443,10 +447,10 @@ class Homepage extends ControllerBase {
       $serieses[] = $val;
     }
 
-    $year_nums = [$serieses, $categories];
+    $year_nums = [$serieses, $categories, $active_months];
 
     //cache results
-    \Drupal::cache()->set($cache_id, $year_nums);
+    \Drupal::cache()->set($cache_id, $year_nums, $active_months);
 
     return $year_nums;
   }
