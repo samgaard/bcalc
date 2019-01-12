@@ -454,7 +454,10 @@ class Homepage extends ControllerBase {
 
   private function getMonthlyStats($year_month, $income = FALSE) {
 
-    $cache_id = 'monthlystats.' . $year_month . \Drupal::currentUser()->id();
+    $cache_id = 'monthlystats.'
+      . $year_month
+      . '.' . ($income ? 'income' : 'spending')
+      . '.' . \Drupal::currentUser()->id();
 
     $monthly_stats = \Drupal::cache()->get($cache_id);
     if (!empty($monthly_stats)) {
