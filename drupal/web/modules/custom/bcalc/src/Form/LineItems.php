@@ -101,8 +101,7 @@ class LineItems extends FormBase {
       ];
       $form['line_items_table'][$node_id]['source'] = [
         '#type' => 'markup',
-        '#markup' => ($src_id ? Term::load($src_id)
-          ->getName() : $node->get('title')->getString()),
+        '#markup' => $node->get('title')->getString(),
       ];
       $form['line_items_table'][$node_id]['amount'] = [
         '#type' => 'markup',

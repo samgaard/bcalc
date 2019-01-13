@@ -1,4 +1,3 @@
-
 bcalc.upload_csv:
   path: '/upload'
   defaults:
@@ -6,7 +5,6 @@ bcalc.upload_csv:
     _title: 'Upload CSV'
   requirements:
     _access: 'TRUE'
-  
 
 bcalc.homepage_build:
   path: '/home'
@@ -22,4 +20,19 @@ bcalc.line_items:
     _form: '\Drupal\bcalc\Form\LineItems'
   requirements:
     _access: 'TRUE'
- 
+
+bcalc.yearly_summary:
+  path: '/year'
+  defaults:
+    _controller: '\Drupal\bcalc\Controller\YearSummary::build'
+    _title: 'Year Summary'
+  requirements:
+    _permission: 'access content'
+
+bcalc.monthly_summary:
+  path: '/month'
+  defaults:
+    _controller: '\Drupal\bcalc\Controller\MonthSummary::build'
+    _title: 'Month Summary'
+  requirements:
+    _permission: 'access content'

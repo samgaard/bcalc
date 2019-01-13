@@ -5,38 +5,23 @@
  * Contains bcalc.module.
  */
 
-use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\NodeInterface;
 
-/**
- * Implements hook_help().
- */
-function bcalc_help($route_name, RouteMatchInterface $route_match) {
-  switch ($route_name) {
-    // Main module help for the bcalc module.
-    case 'help.page.bcalc':
-      $output = '';
-      $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('Family Budget Calculator') . '</p>';
-      return $output;
-
-    default:
-  }
-}
 
 /**
  * Implements hook_theme().
  */
 function bcalc_theme() {
   return [
-    'bcalc' => [
-      'render element' => 'children',
-    ],
-    'homepage' => [
+    'month-summary' => [
       'variables' => [
         'tabs' => NULL,
         'tabscontent' => NULL,
+      ],
+    ],
+    'year-summary' => [
+      'variables' => [
         'yearly_summary_chart' => NULL,
         'yearly_summary_averages' => NULL,
       ],
@@ -72,10 +57,15 @@ function bcalc_preprocess_charts_api_example(&$variables) {
  */
 function bcalc_node_update(NodeInterface $node) {
   if ($node->getType() == 'line_item') {
+    $cache = \Drupal::cache();
     //delete cached data for that month
     $yearmonth = substr($node->get('field_trans_date')->value, 0, 7);
-    $cid = 'monthlystats.' . str_replace('-', '', $yearmonth);
-    \Drupal::cache()->delete($cid);
+    $cid = 'monthlystats.' . str_replace('-', '', $yearmonth)
+      . '.income.' . \Drupal::currentUser()->id();
+    if ($cache->get($cid)) {
+      $cache->delete($cid);
+      $cache->delete(str_replace('income', 'spending', $cid));
+    }
   }
 }
 
@@ -84,9 +74,14 @@ function bcalc_node_update(NodeInterface $node) {
  */
 function bcalc_node_insert(NodeInterface $node) {
   if ($node->getType() == 'line_item') {
+    $cache = \Drupal::cache();
     //delete cached data for that month
     $yearmonth = substr($node->get('field_trans_date')->value, 0, 7);
-    $cid = 'monthlystats.' . str_replace('-', '', $yearmonth);
-    \Drupal::cache()->delete($cid);
+    $cid = 'monthlystats.' . str_replace('-', '', $yearmonth)
+      . '.income.' . \Drupal::currentUser()->id();
+    if ($cache->get($cid)) {
+      $cache->delete($cid);
+      $cache->delete(str_replace('income', 'spending', $cid));
+    }
   }
 }

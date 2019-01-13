@@ -91,7 +91,7 @@ class UploadCSV extends FormBase {
         'Trans Date',
         'Post Date',
         'Description',
-        'Amount'
+        'Amount',
       ],
       'chase_checking' => [
         'Details',
@@ -117,21 +117,29 @@ class UploadCSV extends FormBase {
         'Adjustment Reason',
         'Consumer Note',
         'Tax Year',
-        'Tax Detail'
-      ]
+        'Tax Detail',
+      ],
+      'citi_bank' => [
+        'Status',
+        'Date',
+        'Description',
+        'Debit',
+        'Credit',
+        'Member Name',
+      ],
     ];
   }
 
   private function validate_header($header = []) {
     //CONFIRM DOCUMENT IS IN ONE OF THE APPROVED FORMATS
-    foreach($this->valid_headers() as $header_type => $valid_header) {
-      if(!array_diff($valid_header, $header)) {
+    foreach ($this->valid_headers() as $header_type => $valid_header) {
+      if (!array_diff($valid_header, $header)) {
         //RETURN HEADER TYPE. USEFUL FOR DETERMINING HOW TO IMPORT DATA.
         return $header_type;
       }
     }
     //DEFAULT RETURN FALSE
-    return false;
+    return FALSE;
   }
 
   private function import_from_csv($fid) {
@@ -159,16 +167,7 @@ class UploadCSV extends FormBase {
         //SO FAR THESE ARE UNIVERSAL BUT CAN BE OVERWRITTEN IN SWITCH
         $transaction_description = $lineitem['Description'];
 
-        if(!is_numeric($lineitem['Amount'])) {
-          continue;
-        }
-        $transaction_amount = $lineitem['Amount'];
-
-        if($transaction_amount > 0) {
-          $transaction_type = 'Money In';
-        } else {
-          $transaction_type = 'Money Out';
-        }
+        $amount_key = 'Amount';
 
         //INTERPRET DATA BASED ON FILE FORMAT
         switch ($file_format) {
@@ -177,16 +176,35 @@ class UploadCSV extends FormBase {
             break;
           case 'chase_checking':
             $transaction_date = $lineitem['Posting Date'];
-            if(strpos($transaction_description, 'Payment to Chase') !== false) {
+            if (strpos($transaction_description, 'Payment to Chase') !== FALSE) {
               continue 2;
             }
             break;
           case 'hsa_bank':
             $transaction_date = $lineitem['Requested Date'];
-            if(strpos($transaction_description, 'Interest') !== false) {
+            if (strpos($transaction_description, 'Interest') !== FALSE) {
               continue 2;
             }
             break;
+          case 'citi_bank':
+            $amount_key = 'Debit';
+            $transaction_date = $lineitem['Date'];
+            if (strpos($transaction_description, 'CARD PAYMENT') !== FALSE) {
+              continue 2;
+            }
+            break;
+        }
+
+        if (!is_numeric($lineitem[$amount_key])) {
+          continue;
+        }
+        $transaction_amount = $lineitem[$amount_key];
+
+        if ($transaction_amount > 0) {
+          $transaction_type = 'Money In';
+        }
+        else {
+          $transaction_type = 'Money Out';
         }
 
         // Create node object.
