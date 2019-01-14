@@ -46,6 +46,8 @@ class MonthSummary extends ControllerBase {
     $tabs_content = [];
     $active = TRUE;
 
+    $recent_month_average = !empty($_REQUEST['recent_average']) ? $_REQUEST['recent_average'] : 12;
+
     //MAKE A TAB FOR EACH MONTH
     for ($i = 1; $i <= 12; $i++) {
 
@@ -54,6 +56,9 @@ class MonthSummary extends ControllerBase {
       $year_month = $year . '-' . $month;
       $beginning_of_month = $year_month . '-01';
       $end_of_month = $year_month . '-' . cal_days_in_month(CAL_GREGORIAN, $month, $year);
+
+      //GET LAST X MONTH AVERAGES
+      $recent_averages = $bcalc->lastYearSummaryAverages($year_month, $recent_month_average);
 
       //FIND LINE ITEMS WITHIN THIS DATE RANGE
       $ids = \Drupal::entityQuery('node')
@@ -182,7 +187,7 @@ class MonthSummary extends ControllerBase {
                 default:
                   //TABLE ROW
                   if (is_numeric($cat_key)) {
-                    $rows[] = [
+                    $row = [
                       [
                         'data' => $parents[$cat_key]['title'],
                       ],
@@ -191,7 +196,11 @@ class MonthSummary extends ControllerBase {
                         'class' => 'text-right',
                       ],
                     ];
-
+                    if (!empty($recent_averages[$parent_key])) {
+                      $row[] = ''; // last X month avg
+                      $row[] = ''; // change
+                    }
+                    $rows[] = $row;
                     //DATA FOR CHART
                     $categories[] = $parents[$cat_key]['title'];
                     $numbers[] = [
@@ -208,23 +217,66 @@ class MonthSummary extends ControllerBase {
               $cat_title .= ' ' . number_format((($cat_sum / $month_total_amount) * 100)) . '%';
             }
 
+            $month_change = '';
+            $month_change_prefix = '';
+            $month_change_color = '';
+            if (!empty($recent_averages[$parent_key])) {
+              $month_change_prefix = '+';
+              $month_change_color = 'bg-danger';
+              $month_change = $cat_sum - $recent_averages[$parent_key];
+              if ($month_change < 0) {
+                $month_change_prefix = '';
+                $month_change_color = 'bg-primary';
+              }
+            }
             //TOTAL ROW
-            $rows[] = [
-              'data' => [
-                'Total',
-                [
-                  'data' => $cat_sum,
-                  'class' => 'text-right',
-                ],
+            $row_data = [
+              'Total',
+              [
+                'data' => $cat_sum,
+                'class' => 'text-right',
               ],
+            ];
+
+            if (!empty($recent_averages[$parent_key])) {
+              $row_data[] = [
+                'data' => $recent_averages[$parent_key],
+                'class' => 'text-right',
+              ]; // last X month avg
+              $row_data[] = [
+                'data' => $month_change_prefix . $month_change,
+                'class' => 'text-right ' . $month_change_color,
+              ]; // change
+            }
+            $rows[] = [
+              'data' => $row_data,
               'class' => 'total-row',
             ];
+
+            $header = [
+              'Category',
+              [
+                'data' => 'Total',
+                'class' => 'text-right',
+              ],
+            ];
+
+            if (!empty($recent_averages[$parent_key])) {
+              $header[] = [
+                'data' => $recent_month_average . ' mon avg',
+                'class' => 'text-right',
+              ]; // last X month avg
+              $header[] = [
+                'data' => 'Change',
+                'class' => 'text-right',
+              ]; // change
+            }
 
             //THEME TABLE
             $table = [
               '#theme' => 'table',
               '#rows' => $rows,
-              '#header' => [],
+              '#header' => $header,
             ];
 
             //CHART

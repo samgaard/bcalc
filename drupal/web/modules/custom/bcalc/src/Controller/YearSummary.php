@@ -21,7 +21,7 @@ class YearSummary extends ControllerBase {
 
     $yearly_summary_chart = $bcalc->buildYearSummaryChart($year);
 
-    $yearly_summary_averages = $bcalc->buildYearSummaryAverages($year);
+    $yearly_summary_averages = $bcalc->buildYearSummaryAveragesTable($year);
 
     return [
       '#theme' => 'year-summary',

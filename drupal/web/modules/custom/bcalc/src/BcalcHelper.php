@@ -53,7 +53,7 @@ class BcalcHelper {
     ];
   }
 
-  public function buildYearSummaryAverages($year = NULL) {
+  public function buildYearSummaryAveragesTable($year = NULL) {
     if (!$year) {
       $year = date('Y');
     }
@@ -90,6 +90,76 @@ class BcalcHelper {
       '#rows' => $rows,
     ];
     return $list;
+
+  }
+
+  public function lastYearSummaryAverages($yearmonth = NULL, $active_months = 12) {
+
+    $cache_id = 'last.' . $active_months . '.'
+      . 'summary.stats.'
+      . $yearmonth . '.'
+      . \Drupal::currentUser()->id();
+
+    $last_years_stats = \Drupal::cache()->get($cache_id);
+    if (!empty($last_years_stats)) {
+      return $last_years_stats->data;
+    }
+
+    // get stats from the last 12 months and build averages array
+    $seriesData = [];
+    $found_data = FALSE;
+
+    $tt = \Drupal::service('taxonomy_tree.taxonomy_term_tree');
+    $terms = $tt->load('category');
+    foreach ($terms as $parent) {
+      $seriesData[$parent->name] = ['name' => $parent->name];
+    }
+
+    $yearmonthstamp = strtotime($yearmonth . '-01');
+
+    for ($i = 1; $i <= $active_months; $i++) {
+      $prev_month = date('Ym', strtotime('-' . $i . ' months', $yearmonthstamp));
+      //SPENDING
+      $monthlyStats = $this->getMonthlyStats($prev_month);
+      if (count($monthlyStats[1])) {
+        $month_catdata = [];
+        foreach ($monthlyStats[1] as $cat) {
+          $month_catdata[$cat['name']]['total'] = $cat['y'];
+        }
+        foreach ($seriesData as $catname => $value) {
+          if ($catname != 'Income') {
+            $total = in_array($catname, $monthlyStats[0]) ? $month_catdata[$catname]['total'] : 0;
+            $seriesData[$catname]['data'][] = $total;
+            $found_data = TRUE;
+          }
+        }
+      }
+    }
+
+    $serieses = [];
+    foreach ($seriesData as $val) {
+      $serieses[] = $val;
+    }
+
+    $averages = [];
+    foreach ($serieses as $series) {
+      $total = 0;
+      if (isset($series['data']) && count($series['data']) == $active_months) {
+        foreach ($series['data'] as $month_total) {
+          $total += $month_total;
+        }
+      }
+
+      if ($total) {
+        $average_total = $total / $active_months; // $active_months month average
+        $averages[$series['name']] = $average_total;
+      }
+    }
+
+    //cache results
+    \Drupal::cache()->set($cache_id, $averages);
+
+    return $averages;
 
   }
 
@@ -136,12 +206,12 @@ class BcalcHelper {
       $year = date('Y');
     }
 
-    //    $cache_id = 'yearlystats.' . $year . \Drupal::currentUser()->id();
-    //
-    //    $yearly_stats = \Drupal::cache()->get($cache_id);
-    //    if (!empty($yearly_stats)) {
-    //      return $yearly_stats->data;
-    //    }
+    $cache_id = 'yearlystats.' . $year . \Drupal::currentUser()->id();
+
+    $yearly_stats = \Drupal::cache()->get($cache_id);
+    if (!empty($yearly_stats)) {
+      return $yearly_stats->data;
+    }
 
     $seriesData = [];
     $categories = [];
@@ -205,7 +275,7 @@ class BcalcHelper {
     $year_nums = [$serieses, $categories, $active_months];
 
     //cache results
-    //\Drupal::cache()->set($cache_id, $year_nums, $active_months);
+    \Drupal::cache()->set($cache_id, $year_nums, $active_months);
 
     return $year_nums;
   }

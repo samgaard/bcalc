@@ -63,8 +63,20 @@ function bcalc_node_update(NodeInterface $node) {
     $cid = 'monthlystats.' . str_replace('-', '', $yearmonth)
       . '.income.' . \Drupal::currentUser()->id();
     if ($cache->get($cid)) {
+
+      $cache->delete('last12.summary.stats.'
+        . $yearmonth . '.'
+        . \Drupal::currentUser()->id());
+      $cache->delete('last6.summary.stats.'
+        . $yearmonth . '.'
+        . \Drupal::currentUser()->id());
+
       $cache->delete($cid);
       $cache->delete(str_replace('income', 'spending', $cid));
+
+      $year = substr($yearmonth, 0, 4);
+      $cache_id = 'yearlystats.' . $year . \Drupal::currentUser()->id();
+      $cache->delete($cache_id);
     }
   }
 }
@@ -80,8 +92,20 @@ function bcalc_node_insert(NodeInterface $node) {
     $cid = 'monthlystats.' . str_replace('-', '', $yearmonth)
       . '.income.' . \Drupal::currentUser()->id();
     if ($cache->get($cid)) {
+      $cache->delete('last12.summary.stats.'
+        . $yearmonth . '.'
+        . \Drupal::currentUser()->id());
+
+      $cache->delete('last6.summary.stats.'
+        . $yearmonth . '.'
+        . \Drupal::currentUser()->id());
+
       $cache->delete($cid);
       $cache->delete(str_replace('income', 'spending', $cid));
+
+      $year = substr($yearmonth, 0, 4);
+      $cache_id = 'yearlystats.' . $year . \Drupal::currentUser()->id();
+      $cache->delete($cache_id);
     }
   }
 }
